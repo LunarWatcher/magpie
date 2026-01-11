@@ -57,7 +57,7 @@ void TCPServer::doAccept() {
 void TCPServer::start(
     const std::function<
         void(const Request&)
-    >& onRequest
+    >&
 ) {
     std::vector<std::future<void>> threads;
     for (unsigned int i = 0; i < this->concurrency; ++i) {
