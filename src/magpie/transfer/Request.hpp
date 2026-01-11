@@ -2,5 +2,8 @@
 
 namespace magpie {
 
+struct Request {
+
+};
 
 }

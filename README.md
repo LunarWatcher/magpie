@@ -22,3 +22,9 @@ As an obligatory caveat, I'm not familiar enough with HTTP/2 nor HTTP/3 to tell 
 
 One of the biggest problems with Crow, at least for my use, is that it's heavily disconnected from state. Middlewares do provide some context, but if you need access to various globals (database thread pool, ...), that (AFAIK) relies heavily on globals and/or `std::bind` on functions that take the context as arguments. This is not great for a number of reasons, so managing global context as well as per-call context is a priority.
 
+## Requirements
+
+* C++20 compiler
+* CMake
+* `libnghttp2-dev libssl-dev libasio-dev`
+    * Note: boost::asio does not work
