@@ -1,19 +1,18 @@
 #pragma once
 
-#include "magpie/transfer/Request.hpp"
-#include <functional>
+#include <array>
+#include <cstdint>
+
 namespace magpie::application {
 
 class Adapter {
 public:
     virtual ~Adapter() = default;
 
-    virtual void start(
-        const std::function<
-            const Request&
-        >& onRequest
+    virtual void parse(
+        const std::array<char, 4096>& buff,
+        std::size_t readBytes
     ) = 0;
-    virtual void stop() = 0;
 };
 
 }

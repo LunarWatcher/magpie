@@ -1,0 +1,30 @@
+name: Tests
+on:
+  push:
+    branches: [ master, development ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os-config: 
+          - os: ubuntu-latest
+    runs-on: ${{matrix.os-config.os}}
+    name: Build and test on ${{ matrix.os-config.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt install -y libnghttp2-dev libssl-dev libasio-dev
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j $(nproc)
+      - name: Test (Windows)
+        run: |
+          cd build 
+          make -j $(nproc) test
