@@ -24,7 +24,7 @@ jobs:
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release
           make -j $(nproc)
-      - name: Test (Windows)
+      - name: Test
         run: |
           cd build 
           make -j $(nproc) test
