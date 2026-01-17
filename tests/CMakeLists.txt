@@ -1,5 +1,5 @@
 add_executable(tests 
-    src/DeleteMe.cpp
+    src/routing/RouteCompilationTests.cpp
 )
 
 Include(FetchContent)
@@ -14,5 +14,7 @@ FetchContent_MakeAvailable(Catch2)
 
 target_link_libraries(tests Catch2::Catch2WithMain)
 target_link_libraries(tests magpie)
+
+target_include_directories(tests PUBLIC src/)
 
 # vim:ft=cmake

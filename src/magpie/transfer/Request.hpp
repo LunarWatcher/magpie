@@ -5,10 +5,8 @@
 namespace magpie {
 
 /**
- * The supported HTTP methods. Custom HTTP methods are not supported, because it mostly doesn't make sense. Design
- * better APIs instead.
- *
- * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods#safe_idempotent_and_cacheable_request_methods
+ * TODO: this should not be an enum. Initially thought it was a good idea, but I forgot about webdav, which uses
+ * non-standard protocols.
  */
 enum class HttpMethod {
     GET,

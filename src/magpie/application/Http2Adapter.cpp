@@ -17,7 +17,7 @@ Http2Adapter::Http2Adapter(transport::Connection* conn): conn(conn) {
     // Looks like the fix is just adding a 2 at the end and nothing else, but I'm too eepy to figure out how to macro
     // that right now. Especially because that involves ✨ testing ✨ with stuff I don't have access to, and I'm busy
     // enough with cursed testing setups at work
-    nghttp2_session_callbacks_set_send_callback( 
+    nghttp2_session_callbacks_set_send_callback(
         callbacks,
         &_detail::onSend
     );
@@ -36,7 +36,7 @@ Http2Adapter::Http2Adapter(transport::Connection* conn): conn(conn) {
     );
 
     if (auto result = nghttp2_session_server_new(
-        &sess, 
+        &sess,
         callbacks,
         conn
     ); result != 0) {
@@ -86,9 +86,9 @@ void Http2Adapter::parse(
 
 ssize_t _detail::onSend(
     nghttp2_session*,
-    const uint8_t* data, 
+    const uint8_t* data,
     size_t length,
-    int, 
+    int,
     void* userData
 ) {
     auto* conn = static_cast<transport::Connection*>(userData);
@@ -107,17 +107,17 @@ int _detail::onFrame(
     if (frame->hd.type == NGHTTP2_HEADERS &&
         frame->hd.flags & NGHTTP2_FLAG_END_STREAM) {
         std::cout << "End of stream" << std::endl;
-    } 
+    }
     if (
-        frame->hd.type == NGHTTP2_HEADERS 
+        frame->hd.type == NGHTTP2_HEADERS
         && frame->headers.cat == NGHTTP2_HCAT_REQUEST
     ) {
         std::cout << "Sending response" << std::endl;
 
-        int32_t stream_id = frame->hd.stream_id; 
+        int32_t stream_id = frame->hd.stream_id;
         std::vector<nghttp2_nv> nva;
         // TODO: this is dumb and you should feel bad
-        auto makeNv = [](const std::string &name, const std::string &value) { 
+        auto makeNv = [](const std::string &name, const std::string &value) {
             nghttp2_nv nv;
             nv.name = (uint8_t*)name.c_str();
             nv.value = (uint8_t*)value.c_str();
@@ -163,7 +163,7 @@ int _detail::onFrame(
         rv = nghttp2_session_send(sess);
         if (rv != 0) {
             std::cerr << "Failed to send: " << nghttp2_strerror(rv) << "\n";
-            return NGHTTP2_ERR_CALLBACK_FAILURE; 
+            return NGHTTP2_ERR_CALLBACK_FAILURE;
         }
     }
     return 0;
@@ -179,7 +179,7 @@ int _detail::onHeaders(
     if (
         frame->hd.type == NGHTTP2_HEADERS
         && frame->headers.cat == NGHTTP2_HCAT_REQUEST
-    ) { 
+    ) {
         // TODO: string_view? We probably want to copy everything into std::strings for ownership though
         std::string n((const char*) name, namelen);
         std::string v((const char*) value, valuelen);

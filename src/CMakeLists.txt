@@ -1,6 +1,4 @@
 add_library(magpie
-    magpie/App.cpp
-
     magpie/application/Http2Adapter.cpp
 
     magpie/transport/TCPServer.cpp
