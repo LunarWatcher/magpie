@@ -195,6 +195,22 @@ constexpr std::array<ConstString, params> getParameterTypes() {
     }
 }
 
+template <FixedString s>
+consteval bool isValidPath() {
+    for (size_t i = 0; i < s.size; ++i) {
+        if (s[i] == '{') {
+            if (i == 0 || s[i - 1] != '/') {
+                return false;
+            }
+        } else if (s[i] == '}') {
+            if (i != s.size - 1 && s[i + 1] != '/') {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 template <
     FixedString s,
     typename ReturnType = void,
@@ -202,6 +218,8 @@ template <
 >
 struct FunctionSignature {
 private:
+    static_assert(s[0] == '/', "Invalid route: must start with /");
+    static_assert(isValidPath<s>(), "Invalid route: each template value must be a separate segment");
     constexpr static auto typeArray = getParameterTypes<s>();
 
     template <std::size_t... I>
@@ -214,6 +232,7 @@ private:
                 >::type...
             )
         >;
+
 public:
     using type = decltype(
         compileType(

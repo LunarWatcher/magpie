@@ -92,17 +92,17 @@ TEST_CASE("Signature validation") {
         REQUIRE(func(source) == 69);
     }
     SECTION("All types") {
-        FunctionSignature<"{float}{int}">::type func = [](
+        FunctionSignature<"/{float}/{int}">::type func = [](
             double, int
         ) {
 
         };
-        FunctionSignature<"{string}{int}">::type func2 = [](
+        FunctionSignature<"/{string}/{int}">::type func2 = [](
             const std::string_view&, int
         ) {
 
         };
-        FunctionSignature<"{float}{string}{int}">::type func3 = [](
+        FunctionSignature<"/{float}/{string}/{int}">::type func3 = [](
             double, const std::string_view&, int
         ) {
 
@@ -111,7 +111,7 @@ TEST_CASE("Signature validation") {
 }
 
 TEST_CASE("Test extras") {
-    FunctionSignature<"{string}", int, magpie::data::CommonData*>::type func = [](
+    FunctionSignature<"/{string}", int, magpie::data::CommonData*>::type func = [](
         magpie::data::CommonData* data,
         std::string_view str
     ) {
@@ -121,4 +121,30 @@ TEST_CASE("Test extras") {
     };
     magpie::data::CommonData data;
     REQUIRE(func(&data, "hi") == 69);
+}
+
+TEST_CASE("Path component validation") {
+    STATIC_REQUIRE_FALSE(
+        isValidPath<"{string}">()
+    );
+    STATIC_REQUIRE(
+        isValidPath<"/{string}">()
+    );
+    STATIC_REQUIRE(
+        isValidPath<"/{string}/">()
+    );
+    STATIC_REQUIRE_FALSE(
+        isValidPath<"/v{string}">()
+    );
+    STATIC_REQUIRE_FALSE(
+        isValidPath<"/{string}v">()
+    );
+    STATIC_REQUIRE_FALSE(
+        isValidPath<"/v{string}v">()
+    );
+    // This is handled by a separate static assert in FunctionSignature. 
+    // This is left here in case this behaviour changes, as it will break something if it does change.
+    STATIC_REQUIRE(
+        isValidPath<"whatever">()
+    );
 }
