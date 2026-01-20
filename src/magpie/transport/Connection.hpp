@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 
+namespace magpie { class BaseApp; }
 namespace magpie::transport {
 
 class Connection : public std::enable_shared_from_this<Connection> {
@@ -48,10 +49,14 @@ private:
         );
     }
 public:
+    BaseApp* app;
     asio::ip::tcp::socket socket;
 
-    Connection(asio::io_context& ctx)
-        : adapter(this), socket(ctx) {}
+    Connection(
+        BaseApp* app,
+        asio::io_context& ctx
+    )
+        : adapter(this), app(app), socket(ctx) {}
 
     void start() {
         doRead();

@@ -1,4 +1,5 @@
 #include "TCPServer.hpp"
+#include "magpie/logger/Logger.hpp"
 #include "magpie/transport/Connection.hpp"
 #include <asio/error_code.hpp>
 #include <asio/post.hpp>
@@ -8,6 +9,7 @@
 namespace magpie::transport {
 
 TCPServer::TCPServer(
+    BaseApp* app,
     short port,
     unsigned int concurrency
 ): 
@@ -18,7 +20,8 @@ TCPServer::TCPServer(
             asio::ip::tcp::v4(), port
         )
     ),
-    concurrency(concurrency)
+    concurrency(concurrency),
+    app(app)
 {
     asio::error_code err;
     if (ipv4Acceptor.listen(
@@ -37,7 +40,7 @@ TCPServer::~TCPServer() {
 
 void TCPServer::doAccept() {
     // TODO: I do not like this pattern. Fix
-    auto conn = std::make_shared<Connection>(ctx);
+    auto conn = std::make_shared<Connection>(this->app, ctx);
     ipv4Acceptor.async_accept(
         conn->socket,
         // TODO: asio has built-in C++20 coroutine support. Figure out how to shoehorn it in here
@@ -55,9 +58,6 @@ void TCPServer::doAccept() {
 }
 
 void TCPServer::start(
-    const std::function<
-        void(const Request&)
-    >&
 ) {
     std::vector<std::future<void>> threads;
     for (unsigned int i = 0; i < this->concurrency; ++i) {
@@ -68,6 +68,11 @@ void TCPServer::start(
         );
     }
 
+    logger::info(
+        "TCPServer listening on http://{}:{}",
+        this->ipv4Acceptor.local_endpoint().address().to_string(),
+        this->ipv4Acceptor.local_endpoint().port()
+    );
     this->ctx.run();
 }
 

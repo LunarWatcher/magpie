@@ -1,7 +1,10 @@
 #pragma once
 
 #include "magpie/application/Adapter.hpp"
+#include "magpie/transport/TCPServer.hpp"
 #include <nghttp2/nghttp2.h>
+
+namespace magpie { class BaseApp; }
 
 namespace magpie::transport {
 class Connection;
@@ -43,12 +46,18 @@ extern int onFrame(
 
 }
 
+struct UserData {
+    transport::Connection* conn;
+    std::unordered_map<size_t, std::unordered_map<std::string, std::string>> headers;
+};
+
 class Http2Adapter : public Adapter {
 private:
     nghttp2_session* sess;
     nghttp2_session_callbacks* callbacks;
 
     transport::Connection* conn;
+    UserData data;
 public:
     Http2Adapter(
         transport::Connection* conn

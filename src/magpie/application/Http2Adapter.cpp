@@ -2,6 +2,7 @@
 
 #include <nghttp2/nghttp2.h>
 #include "magpie/transport/Connection.hpp"
+#include "magpie/App.hpp"
 #include <string>
 
 namespace magpie::application {
@@ -35,10 +36,11 @@ Http2Adapter::Http2Adapter(transport::Connection* conn): conn(conn) {
         _detail::onHeaders
     );
 
+    data.conn = conn;
     if (auto result = nghttp2_session_server_new(
         &sess,
         callbacks,
-        conn
+        &data
     ); result != 0) {
         std::cerr << "Failed to create session: " << result << std::endl;
         throw std::runtime_error("Session init error");
@@ -91,7 +93,7 @@ ssize_t _detail::onSend(
     int,
     void* userData
 ) {
-    auto* conn = static_cast<transport::Connection*>(userData);
+    auto* conn = static_cast<UserData*>(userData)->conn;
     return asio::write(
         conn->socket,
         asio::buffer(data, length)
@@ -102,8 +104,10 @@ ssize_t _detail::onSend(
 int _detail::onFrame(
     nghttp2_session* sess,
     const nghttp2_frame* frame,
-    void*
+    void* userData
 ) {
+    auto& ud = *static_cast<UserData*>(userData);
+    auto* conn = ud.conn;
     if (frame->hd.type == NGHTTP2_HEADERS &&
         frame->hd.flags & NGHTTP2_FLAG_END_STREAM) {
         std::cout << "End of stream" << std::endl;
@@ -134,6 +138,17 @@ int _detail::onFrame(
         nva.push_back(makeNv(c, d));
         nva.push_back(makeNv(e, f));
         // Looks like this is where we'd feed in arbitrary data from the server
+        auto app = conn->app;
+        if (app == nullptr) {
+            [[unlikely]]
+            throw std::runtime_error("Critical developer error");
+        }
+        const auto& router = app->getRouter();
+        auto& headers = ud.headers[frame->hd.stream_id];
+        auto& destination = headers.at(":path");
+
+        router.invokeRoute(destination);
+
         nghttp2_data_provider dp;
         dp.read_callback = [](
             nghttp2_session *,
@@ -174,8 +189,9 @@ int _detail::onHeaders(
     const nghttp2_frame *frame,
     const uint8_t* name, size_t namelen,
     const uint8_t* value, size_t valuelen,
-    uint8_t, void*
+    uint8_t, void* userData
 ) {
+    auto& ud = *static_cast<UserData*>(userData);
     if (
         frame->hd.type == NGHTTP2_HEADERS
         && frame->headers.cat == NGHTTP2_HCAT_REQUEST
@@ -184,6 +200,8 @@ int _detail::onHeaders(
         std::string n((const char*) name, namelen);
         std::string v((const char*) value, valuelen);
         std::cout << "Header: " << n << " = " << v << "\n";
+
+        ud.headers[frame->hd.stream_id][n] = v;
 
         if (n == "content-length") {
             // TODO: reserve size in request object

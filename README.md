@@ -10,7 +10,7 @@ It's a pain in the ass to work with, and I'm done trying.
 
 ## Current status
 
-This is yet another backburner project. It's not expected to be testable for a bare minimum webapp for at least a few months.
+This is yet another backburner project. It's not expected to be testable for a bare minimum webapp for at least a few months. The API is not stable, and will break regularly.
 
 ## Technical design considerations
 

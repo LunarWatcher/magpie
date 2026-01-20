@@ -16,7 +16,11 @@ int main() {
     };
 
     app.route<"/">([](Context*) {
+        std::cout << "You have sunk my battleship" << std::endl;
+    });
 
+    app.route<"/{string}">([](Context*, const std::string_view& v) {
+        std::cout << "URL component: " << v << std::endl;
     });
 
     app.run(true);

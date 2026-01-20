@@ -3,6 +3,7 @@
 #include "magpie/data/CommonData.hpp"
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -28,7 +29,7 @@ struct FixedString {
         std::copy_n(begin, N, std::data(data));
         data.back() = '\0';
     }
-    constexpr char operator[](size_t idx) const {
+    consteval char operator[](size_t idx) const {
         if (idx >= size) {
             throw std::runtime_error("Invalid string index");
         }
@@ -36,7 +37,7 @@ struct FixedString {
     }
     constexpr ConstString toConstString() const;
 
-    constexpr auto c_str() const -> char const * { return std::data(data); }
+    constexpr auto c_str() const -> char const* { return std::data(data); }
 };
 
 template <std::size_t N>
@@ -139,16 +140,31 @@ struct TypeInfo : public std::false_type {
 template<>
 struct TypeInfo<"{int}"> {
     using type = int64_t;
+    static constexpr type convert(const std::string_view& v) {
+        type out;
+        std::from_chars(v.begin(), v.end(), out);
+        return out;
+    }
 };
 
 template<>
 struct TypeInfo<"{string}"> {
     using type = std::string_view;
+    static constexpr type convert(const std::string_view& v) {
+        return v.back() == '/' ? 
+            v.substr(0, v.size() - 1)
+            : v;
+    }
 };
 
 template<>
 struct TypeInfo<"{float}"> {
     using type = double;
+    static type convert(const std::string_view& v) {
+        type out;
+        std::from_chars(v.begin(), v.end(), out);
+        return out;
+    }
 };
 
 constexpr static inline ConstString INT_VALUE("{int}", 6);
@@ -195,6 +211,46 @@ constexpr std::array<ConstString, params> getParameterTypes() {
     }
 }
 
+template <FixedString s, size_t matched, size_t params>
+constexpr void parseForIndices(
+    std::array<std::pair<ConstString, size_t>, params>& out,
+    size_t slashIndex = 0,
+    size_t i = 1
+) {
+    if constexpr (matched == params) {
+        return;
+    } else {
+        auto newSlashIndex = slashIndex + (s[i] == '/');
+        if (i >= s.size) {
+            return;
+        } 
+        if (s[i] == '{') {
+            constexpr auto constStr = s.toConstString();
+            if (startsWithAtOffset(constStr, INT_VALUE, i)) {
+                std::get<matched>(out) = {INT_VALUE, slashIndex};
+                parseForIndices<s, matched + 1, params>(out, newSlashIndex, i + 5);
+            } else if (startsWithAtOffset(constStr, STRING_VALUE, i)) {
+                std::get<matched>(out)  = {STRING_VALUE, slashIndex};
+                parseForIndices<s, matched + 1, params>(out, newSlashIndex, i + 8);
+            } else if (startsWithAtOffset(constStr, FLOAT_VALUE, i)) {
+                std::get<matched>(out) = {FLOAT_VALUE, slashIndex};
+                parseForIndices<s, matched + 1, params>(out, newSlashIndex, i + 7);
+            } else {
+                throw "invalid";
+            }
+        } else {
+            parseForIndices<s, matched, params>(out, newSlashIndex, i + 1);
+        }
+    }
+}
+
+template <FixedString s, size_t Size = guessParams<s>()>
+consteval auto getForwardableIndices() {
+    std::array<std::pair<ConstString, size_t>, Size> out;
+    parseForIndices<s, 0, Size>(out);
+    return out;
+}
+
 template <FixedString s>
 consteval bool isValidPath() {
     for (size_t i = 0; i < s.size; ++i) {
@@ -219,7 +275,8 @@ template <
 struct FunctionSignature {
 private:
     static_assert(s[0] == '/', "Invalid route: must start with /");
-    static_assert(isValidPath<s>(), "Invalid route: each template value must be a separate segment");
+    static_assert(isValidPath<s>(), "Invalid route: each placeholder value must be a separate segment");
+
     constexpr static auto typeArray = getParameterTypes<s>();
 
     template <std::size_t... I>
