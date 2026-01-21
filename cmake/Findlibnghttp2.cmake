@@ -22,8 +22,20 @@ REQUIRED_VARS
 )
 
 if(LIBNGHTTP2_FOUND)
-  set(LIBNGHTTP2_LIBRARIES     ${LIBNGHTTP2_LIBRARY})
-  set(LIBNGHTTP2_INCLUDE_DIRS  ${LIBNGHTTP2_INCLUDE_DIR})
+    set(LIBNGHTTP2_LIBRARIES     ${LIBNGHTTP2_LIBRARY})
+    set(LIBNGHTTP2_INCLUDE_DIRS  ${LIBNGHTTP2_INCLUDE_DIR})
 endif()
+
+add_library(
+    libnghttp2
+    INTERFACE 
+)
+target_link_libraries(libnghttp2 INTERFACE ${LIBNGHTTP2_LIBRARY})
+target_include_directories(libnghttp2 INTERFACE ${LIBNGHTTP2_INCLUDE_DIR})
+
+
+add_library(
+    libnghttp2::libnghttp2 ALIAS libnghttp2
+)
 
 mark_as_advanced(LIBNGHTTP2_INCLUDE_DIR LIBNGHTTP2_LIBRARY)

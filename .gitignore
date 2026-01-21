@@ -1,5 +1,6 @@
 .cache
 .ccls-cache
+CMakeUserPresets.json
 
 # Custom
 build/
