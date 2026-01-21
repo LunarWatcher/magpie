@@ -6,18 +6,15 @@ on:
 
 jobs:
   test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os-config: 
-          - os: ubuntu-latest
-    runs-on: ${{matrix.os-config.os}}
-    name: Build and test on ${{ matrix.os-config.os }}
+    runs-on: ubuntu-latest
+    container: ubuntu:rolling
+    name: Build and test on ubuntu
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
         run: |
-          sudo apt install -y libnghttp2-dev libssl-dev libasio-dev
+          sudo apt install -y libnghttp2-dev libssl-dev libasio-dev gcc g++ \
+            build-essential cmake
       - name: Build
         run: |
           mkdir build
@@ -26,5 +23,28 @@ jobs:
           make -j $(nproc)
       - name: Test
         run: |
-          cd build 
+          cd build
           make -j $(nproc) test
+  test:
+    runs-on: windows-latest
+    name: Build and test on Windows
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install conan
+        run: |
+          pip install conan
+      - name: Grab conan_provider.cmake
+        shell: bash
+        run:
+          mkdir build
+          cd build
+          wget https://github.com/conan-io/cmake-conan/raw/refs/heads/develop2/conan_provider.cmake
+      - name: Build
+        run: |
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES ./conan_provider.cmake
+          cmake --build .
+      - name: Test
+        run: |
+          cd build
+          cmake --build - --target test

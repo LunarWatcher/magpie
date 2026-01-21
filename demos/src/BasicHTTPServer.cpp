@@ -22,6 +22,9 @@ int main() {
     app.route<"/{string}">([](Context*, const std::string_view& v) {
         std::cout << "URL component: " << v << std::endl;
     });
+    app.route<"/test/{string}">([](Context*, const std::string_view& v) {
+        std::cout << "Subroute: " << v << std::endl;
+    });
 
     app.run(true);
 }

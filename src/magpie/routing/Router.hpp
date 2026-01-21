@@ -106,7 +106,7 @@ public:
             if (next - start == 1) {
                 start = next;
             } else if (next != start) {
-                out.push_back(path.substr(start + 1, (next - start)));
+                out.push_back(path.substr(start + 1, (next - start - 1)));
                 start = next;
             }
         }
