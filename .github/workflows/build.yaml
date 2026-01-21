@@ -46,7 +46,7 @@ jobs:
         run: |
           cd build
           dir
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="$($PWD.Path)/conan_provider.cmake"
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CONAN=ON
           cmake --build . --config Release -j 4
       - name: Test
         run: |

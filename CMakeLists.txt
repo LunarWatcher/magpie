@@ -1,4 +1,15 @@
 cmake_minimum_required(VERSION 3.27)
+
+if (ENABLE_CONAN)
+    include(FetchContent)
+    FetchContent_Declare(conan
+        GIT_REPOSITORY https://github.com/conan-io/cmake-conan
+        GIT_TAG develop2
+    )
+    FetchContent_MakeAvailable(conan)
+    set(CMAKE_PROJECT_TOP_LEVEL_INCLUDES ${conan_SOURCE_DIR}/conan_provider.cmake)
+endif()
+
 project(magpie)
 
 set (CMAKE_CXX_STANDARD 23)
@@ -7,7 +18,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+if (NOT ENABLE_CONAN)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+endif()
 
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
