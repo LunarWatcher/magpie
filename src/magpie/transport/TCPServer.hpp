@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _WIN32
+#include <SDKDDKVer.h>
+#endif
+
 #include <asio.hpp>
 #include <asio/io_context.hpp>
 

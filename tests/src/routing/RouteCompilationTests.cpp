@@ -60,7 +60,7 @@ TEST_CASE("Type expansion") {
         );
     }
     SECTION("Two args") {
-        constexpr auto params = getParameterTypes<"{string}{float}">();
+        constexpr auto params = getParameterTypes<"{string}{int}">();
         STATIC_REQUIRE(params.size() == 2);
 
     }
@@ -92,18 +92,13 @@ TEST_CASE("Signature validation") {
         REQUIRE(func(source) == 69);
     }
     SECTION("All types") {
-        FunctionSignature<"/{float}/{int}">::type func = [](
-            double, int
+        FunctionSignature<"/{string}/{int}">::type func = [](
+            std::string_view, int
         ) {
 
         };
-        FunctionSignature<"/{string}/{int}">::type func2 = [](
-            const std::string_view&, int
-        ) {
-
-        };
-        FunctionSignature<"/{float}/{string}/{int}">::type func3 = [](
-            double, const std::string_view&, int
+        FunctionSignature<"/{int}/{string}">::type func2 = [](
+            int, std::string_view
         ) {
 
         };

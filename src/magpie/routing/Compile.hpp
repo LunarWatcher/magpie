@@ -157,19 +157,8 @@ struct TypeInfo<"{string}"> {
     }
 };
 
-template<>
-struct TypeInfo<"{float}"> {
-    using type = double;
-    static type convert(const std::string_view& v) {
-        type out;
-        std::from_chars(v.begin(), v.end(), out);
-        return out;
-    }
-};
-
 constexpr static inline ConstString INT_VALUE("{int}", 6);
 constexpr static inline ConstString STRING_VALUE("{string}", 9);
-constexpr static inline ConstString FLOAT_VALUE("{float}", 8);
 
 template <FixedString s, size_t matched, size_t params>
 constexpr void parse(std::array<ConstString, params>& out, size_t i = 0) {
@@ -187,9 +176,6 @@ constexpr void parse(std::array<ConstString, params>& out, size_t i = 0) {
             } else if (startsWithAtOffset(constStr, STRING_VALUE, i)) {
                 out.at(matched) = STRING_VALUE;
                 parse<s, matched + 1, params>(out, i + 8);
-            } else if (startsWithAtOffset(constStr, FLOAT_VALUE, i)) {
-                out.at(matched) = FLOAT_VALUE;
-                parse<s, matched + 1, params>(out, i + 7);
             } else {
                 throw "invalid";
             }
@@ -232,9 +218,6 @@ constexpr void parseForIndices(
             } else if (startsWithAtOffset(constStr, STRING_VALUE, i)) {
                 std::get<matched>(out)  = {STRING_VALUE, slashIndex};
                 parseForIndices<s, matched + 1, params>(out, newSlashIndex, i + 8);
-            } else if (startsWithAtOffset(constStr, FLOAT_VALUE, i)) {
-                std::get<matched>(out) = {FLOAT_VALUE, slashIndex};
-                parseForIndices<s, matched + 1, params>(out, newSlashIndex, i + 7);
             } else {
                 throw "invalid";
             }

@@ -21,6 +21,7 @@ enum class MatchMode {
 template <typename Value>
 struct Node {
     std::optional<Value> value;
+    int weight;
 
     std::vector<std::shared_ptr<Node<Value>>> childNodes;
 
@@ -41,7 +42,9 @@ struct RootNode : public Node<Value> {
 template <typename Value>
 struct StandardNode : public Node<Value> {
     std::string segment;
-    StandardNode(const std::string& segment) : segment(segment) {}
+    StandardNode(const std::string& segment) : segment(segment) {
+        this->weight = 69000;
+    }
 
     MatchMode match(const std::string_view& segment) override {
         return segment == this->segment ? MatchMode::SINGLE_SEGMENT : MatchMode::NO_MATCH;
@@ -53,6 +56,15 @@ struct StandardNode : public Node<Value> {
 
 template <typename Value, typename NodeType>
 struct TemplateNode : public Node<Value> {
+    TemplateNode() {
+        if constexpr (std::is_same_v<NodeType, std::string_view>) {
+            this->weight = 1000;
+        } else if constexpr (std::is_same_v<NodeType, int64_t>) {
+            this->weight = 2000;
+        } else {
+            static_assert(false, "Invalid type");
+        }
+    }
     virtual MatchMode match(const std::string_view& segment) override {
         // Notes:
         // - We do not care about integer/double overflow here. This is a specific kind of error that we don't want to
@@ -61,18 +73,10 @@ struct TemplateNode : public Node<Value> {
         //   probably isn't a placeholder we want to support
         if constexpr (std::is_same_v<NodeType, std::string_view>) {
             return MatchMode::SINGLE_SEGMENT;
-        } else if constexpr (std::is_same_v<NodeType, double>) {
-            for (size_t i = 0; i < segment.size() - 1; ++i) {
-                auto c = segment.at(i);
-                if ((c < '0' || c > '9') && c != '.') {
-                    return MatchMode::NO_MATCH;
-                }
-            }
-            return MatchMode::SINGLE_SEGMENT;
         } else if constexpr (std::is_same_v<NodeType, int64_t>) {
             for (size_t i = 0; i < segment.size() - 1; ++i) {
                 auto c = segment.at(i);
-                if ((c < '0' || c > '9')) {
+                if ((c < '0' || c > '9') && c != '+' && c != '-') {
                     return MatchMode::NO_MATCH;
                 }
             }
@@ -84,11 +88,9 @@ struct TemplateNode : public Node<Value> {
 
     constexpr virtual bool operator==(const std::string_view& pathSegment) override { 
         if constexpr (std::is_same_v<NodeType, std::string_view>) {
-            return pathSegment == "{string}/";
-        } else if constexpr (std::is_same_v<NodeType, double>) {
-            return pathSegment == "{float}/";
+            return pathSegment.starts_with("{string}");
         } else if constexpr (std::is_same_v<NodeType, int64_t>) {
-            return pathSegment == "{int}/";
+            return pathSegment.starts_with("{int}");
         } else {
             static_assert(false, "Invalid type");
         }
@@ -113,10 +115,13 @@ public:
         for (auto& segment : route) {
             bool hasMatch = false;
             for (auto& childNode : node->childNodes) {
-                if (childNode->match(segment) == MatchMode::SINGLE_SEGMENT) {
+                auto matchType = childNode->match(segment);
+                if (matchType == MatchMode::SINGLE_SEGMENT) {
                     node = childNode;
                     hasMatch = true;
                     break;
+                } else if (matchType == MatchMode::CATCHALL) {
+                    return childNode->value;
                 }
             }
 
@@ -149,8 +154,6 @@ public:
                     newNode = std::make_shared<TemplateNode<Value, routing::TypeInfo<"{string}">::type>>(); 
                 } else if (segment.starts_with("{int}")) {
                     newNode = std::make_shared<TemplateNode<Value, routing::TypeInfo<"{int}">::type>>(); 
-                } else if (segment.starts_with("{float}")) {
-                    newNode = std::make_shared<TemplateNode<Value, routing::TypeInfo<"{float}">::type>>(); 
                 } else {
                     if (segment.find('{') != std::string_view::npos) {
                         [[unlikely]]
@@ -163,6 +166,15 @@ public:
                 }
 
                 node->childNodes.push_back(newNode);
+
+                std::sort(
+                    node->childNodes.begin(),
+                    node->childNodes.end(),
+                    [](const auto& a, const auto& b) {
+                        return a->weight > b->weight;
+                    }
+                );
+
                 node = newNode;
             }
         }

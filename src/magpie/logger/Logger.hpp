@@ -15,8 +15,24 @@ enum class Level {
     CRITICAL
 };
 
-inline void defaultHandler(Level, const std::string_view& message) {
-    std::cout << message << std::endl;
+inline void defaultHandler(Level level, const std::string_view& message) {
+    switch (level) {
+    case Level::DEBUG:
+        std::cout << "DEBUG    " << message << std::endl;
+        break;
+    case Level::INFO:
+        std::cout << "INFO     " << message << std::endl;
+        break;
+    case Level::WARNING:
+        std::cout << "WARNING  " << message << std::endl;
+        break;
+    case Level::ERROR:
+        std::cout << "ERROR    " << message << std::endl;
+        break;
+    case Level::CRITICAL:
+        std::cout << "CRITICAL " << message << std::endl;
+        break;
+    }
 }
 
 struct LoggerConfig {
