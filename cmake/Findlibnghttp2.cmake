@@ -15,7 +15,7 @@ find_library(
 include(FindPackageHandleStandardArgs)
 
 find_package_handle_standard_args(
-    nghttp2
+    libnghttp2
 REQUIRED_VARS 
     LIBNGHTTP2_LIBRARY 
     LIBNGHTTP2_INCLUDE_DIR

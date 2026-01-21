@@ -53,7 +53,7 @@ message(STATUS "\t- Sanitising: ${MAGPIE_SANITISE}")
 
 # Used for crypto, and maybe HTTPS eventually:tm:
 find_package(OpenSSL REQUIRED)
-find_package(nghttp2 REQUIRED)
+find_package(libnghttp2 REQUIRED)
 find_package(asio REQUIRED)
 
 add_subdirectory(src)
