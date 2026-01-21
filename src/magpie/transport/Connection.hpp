@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _WIN32
+#include <SDKDDKVer.h>
+#endif
+
 #include "magpie/application/Http2Adapter.hpp"
 #include <asio.hpp>
 #include <iostream>
