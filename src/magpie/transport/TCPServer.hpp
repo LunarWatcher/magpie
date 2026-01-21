@@ -1,7 +1,7 @@
 #pragma once
 
 #include <asio.hpp>
-#include <asio/io_service.hpp>
+#include <asio/io_context.hpp>
 
 
 namespace magpie { class BaseApp; }

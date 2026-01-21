@@ -56,6 +56,8 @@ find_package(OpenSSL REQUIRED)
 find_package(libnghttp2 REQUIRED)
 find_package(asio REQUIRED)
 
+add_definitions(-DASIO_NO_DEPRECATED=true)
+
 add_subdirectory(src)
 
 add_custom_target(run

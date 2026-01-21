@@ -24,10 +24,11 @@ TCPServer::TCPServer(
     app(app)
 {
     asio::error_code err;
-    if (ipv4Acceptor.listen(
+    ipv4Acceptor.listen(
         asio::ip::tcp::acceptor::max_listen_connections,
         err
-    )) {
+    );
+    if (err) {
         throw std::runtime_error(
             "Failed to listen on port: " + err.message()
         );
