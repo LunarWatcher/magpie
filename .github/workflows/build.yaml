@@ -46,9 +46,9 @@ jobs:
         run: |
           cd build
           dir
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="conan_provider.cmake"
-          cmake --build .
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="$PSScriptRoot\conan_provider.cmake"
+          cmake --build . --config Release
       - name: Test
         run: |
           cd build
-          cmake --build - --target test
+          cmake --build . --target test --config Release
