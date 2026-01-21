@@ -42,7 +42,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          wget https://github.com/conan-io/cmake-conan/raw/refs/heads/develop2/conan_provider.cmake
+          C:\msys64\usr\bin\wget.exe https://github.com/conan-io/cmake-conan/raw/refs/heads/develop2/conan_provider.cmake
       - name: Build
         run: |
           cd build
