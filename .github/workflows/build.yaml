@@ -10,10 +10,13 @@ jobs:
     container: ubuntu:rolling
     name: Build and test on ubuntu
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      - name: Fix git ownership
+        run: |
+          git config --global --add safe.directory $(pwd)
       - name: Install deps
         run: |
-          sudo apt install -y libnghttp2-dev libssl-dev libasio-dev gcc g++ \
+          apt install -y libnghttp2-dev libssl-dev libasio-dev gcc g++ \
             build-essential cmake
       - name: Build
         run: |
