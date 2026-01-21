@@ -12,6 +12,7 @@ jobs:
     steps:
       - name: Install deps
         run: |
+          apt update
           apt install -y libnghttp2-dev libssl-dev libasio-dev gcc g++ \
             build-essential cmake git
       - uses: actions/checkout@v6
@@ -32,13 +33,13 @@ jobs:
     runs-on: windows-latest
     name: Build and test on Windows
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install conan
         run: |
           pip install conan
       - name: Grab conan_provider.cmake
         shell: bash
-        run:
+        run: |
           mkdir build
           cd build
           wget https://github.com/conan-io/cmake-conan/raw/refs/heads/develop2/conan_provider.cmake
