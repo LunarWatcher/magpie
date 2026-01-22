@@ -14,7 +14,7 @@ namespace magpie::application {
 
 namespace _detail {
 
-extern ssize_t onSend(
+extern nghttp2_ssize onSend(
     nghttp2_session* sess,
     const uint8_t* data, 
     size_t length,

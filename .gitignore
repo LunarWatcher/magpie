@@ -5,6 +5,7 @@ CMakeUserPresets.json
 # Custom
 build/
 build-*/
+out/
 compile_commands.json
 
 # Borrowed from https://github.com/github/.gitignore {{{

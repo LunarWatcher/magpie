@@ -14,11 +14,7 @@ Http2Adapter::Http2Adapter(transport::Connection* conn): conn(conn) {
     ); result != 0) {
         std::cerr << "Failed to create callback object: " << result << std::endl;
     }
-    // TODO: deprecated, but the deprecation has not hit mint yet
-    // Looks like the fix is just adding a 2 at the end and nothing else, but I'm too eepy to figure out how to macro
-    // that right now. Especially because that involves ✨ testing ✨ with stuff I don't have access to, and I'm busy
-    // enough with cursed testing setups at work
-    nghttp2_session_callbacks_set_send_callback(
+    nghttp2_session_callbacks_set_send_callback2(
         callbacks,
         &_detail::onSend
     );
@@ -86,7 +82,7 @@ void Http2Adapter::parse(
     );
 }
 
-ssize_t _detail::onSend(
+nghttp2_ssize _detail::onSend(
     nghttp2_session*,
     const uint8_t* data,
     size_t length,
@@ -157,12 +153,12 @@ int _detail::onFrame(
             uint32_t *data_flags,
             nghttp2_data_source*,
             void *
-        ) -> ssize_t {
+        ) -> nghttp2_ssize {
             std::string response = "Hewwo world :3";
             size_t len = std::min(length, response.size());
             std::memcpy(buf, response.c_str(), len);
             *data_flags = NGHTTP2_DATA_FLAG_EOF;
-            return (ssize_t) len;
+            return (nghttp2_ssize) len;
         };
         int rv = nghttp2_submit_response(
             sess,

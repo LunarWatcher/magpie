@@ -4,7 +4,7 @@ from conan.tools.files import copy
 from pathlib import Path
 import shutil
 
-class NyaaTheUntitledGame(ConanFile):
+class Magpie(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeToolchain", "CMakeDeps"
 

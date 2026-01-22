@@ -14,7 +14,8 @@ jobs:
         run: |
           apt update
           apt install -y libnghttp2-dev libssl-dev libasio-dev gcc g++ \
-            build-essential cmake git
+            build-essential cmake git python3 python3-pip
+          pip3 install --break-system-packages conan
       - uses: actions/checkout@v6
       - name: Fix git ownership
         run: |
@@ -23,23 +24,13 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CONAN=true
           make -j $(nproc)
       - name: Test
         run: |
           cd build
           make -j $(nproc) test
   test-windows:
-    # The windows CI does not run because CMake picks up and arbitrarily chooses between three separate MSVC versions
-    # It's unclear to me whether or not there actually is three different versions, or if Microsoft just has an
-    # identity crisis when they have to version different products in the same suite of tools.
-    # https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-Readme.md#microsoft-visual-c 
-    # suggests the latter. In either case, MSVC++ 2022 appears to be too old to build anything, which may or may
-    # not be why the compiler shits itself with a billion errors in nghttp2 (of all places to crash; nghttp2 is
-    # plain C)
-    # This will likely not run until github actions bumps the MSVC version. There's some third party tools that
-    # may or may not be used to bump the image, but they're not widely used and I don't feel like it
-    if: false
     runs-on: windows-latest
     name: Build and test on Windows
     steps:
