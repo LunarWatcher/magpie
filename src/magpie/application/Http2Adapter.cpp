@@ -72,7 +72,7 @@ void Http2Adapter::parse(
     const std::array<char, 4096>& buff,
     std::size_t readBytes
 ) {
-    nghttp2_session_mem_recv(
+    nghttp2_session_mem_recv2(
         this->sess,
         (const uint8_t*) buff.data(),
         readBytes
@@ -145,7 +145,7 @@ int _detail::onFrame(
 
         router.invokeRoute(destination);
 
-        nghttp2_data_provider dp;
+        nghttp2_data_provider2 dp;
         dp.read_callback = [](
             nghttp2_session *,
             int32_t,
@@ -160,7 +160,7 @@ int _detail::onFrame(
             *data_flags = NGHTTP2_DATA_FLAG_EOF;
             return (nghttp2_ssize) len;
         };
-        int rv = nghttp2_submit_response(
+        int rv = nghttp2_submit_response2(
             sess,
             stream_id,
             nva.data(),
