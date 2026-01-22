@@ -142,7 +142,7 @@ struct TypeInfo<"{int}"> {
     using type = int64_t;
     static constexpr type convert(const std::string_view& v) {
         type out;
-        std::from_chars(v.begin(), v.end(), out);
+        std::from_chars(v.data(), v.data() + v.size(), out);
         return out;
     }
 };

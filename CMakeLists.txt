@@ -57,7 +57,7 @@ find_package(OpenSSL REQUIRED)
 find_package(libnghttp2 REQUIRED)
 find_package(asio REQUIRED)
 
-add_definitions(-DASIO_NO_DEPRECATED=true)
+add_definitions(-DASIO_NO_DEPRECATED=true -DNGHTTP2_NO_SSIZE_T=true)
 
 add_subdirectory(src)
 
