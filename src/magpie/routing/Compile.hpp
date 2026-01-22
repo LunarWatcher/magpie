@@ -29,7 +29,7 @@ struct FixedString {
         std::copy_n(begin, N, std::data(data));
         data.back() = '\0';
     }
-    consteval char operator[](size_t idx) const {
+    constexpr char operator[](size_t idx) const {
         if (idx >= size) {
             throw std::runtime_error("Invalid string index");
         }
