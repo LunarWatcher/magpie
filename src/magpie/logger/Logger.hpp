@@ -8,28 +8,28 @@
 namespace magpie::logger {
 
 enum class Level {
-    DEBUG,
-    INFO,
-    WARNING,
-    ERROR,
-    CRITICAL
+    debug,
+    info,
+    warning,
+    error,
+    critical
 };
 
 inline void defaultHandler(Level level, const std::string_view& message) {
     switch (level) {
-    case Level::DEBUG:
+    case Level::debug:
         std::cout << "DEBUG    " << message << std::endl;
         break;
-    case Level::INFO:
+    case Level::info:
         std::cout << "INFO     " << message << std::endl;
         break;
-    case Level::WARNING:
+    case Level::warning:
         std::cout << "WARNING  " << message << std::endl;
         break;
-    case Level::ERROR:
+    case Level::error:
         std::cout << "ERROR    " << message << std::endl;
         break;
-    case Level::CRITICAL:
+    case Level::critical:
         std::cout << "CRITICAL " << message << std::endl;
         break;
     }
@@ -54,27 +54,27 @@ inline void log(const std::format_string<Args...>& fmt, Args&&... args) {
 
 template <class... Args>
 inline void debug(const std::format_string<Args...>& format, Args&&... args) {
-    log<Level::DEBUG, Args...>(format, std::forward<Args>(args)...);
+    log<Level::debug, Args...>(format, std::forward<Args>(args)...);
 }
 
 template <class... Args>
 inline void info(const std::format_string<Args...>& format, Args&&... args) {
-    log<Level::INFO, Args...>(format, std::forward<Args>(args)...);
+    log<Level::info, Args...>(format, std::forward<Args>(args)...);
 }
 
 template <class... Args>
 inline void warn(const std::format_string<Args...>& format, Args&&... args) {
-    log<Level::WARNING, Args...>(format, std::forward<Args>(args)...);
+    log<Level::warning, Args...>(format, std::forward<Args>(args)...);
 }
 
 template <class... Args>
 inline void error(const std::format_string<Args...>& format, Args&&... args) {
-    log<Level::ERROR, Args...>(format, std::forward<Args>(args)...);
+    log<Level::error, Args...>(format, std::forward<Args>(args)...);
 }
 
 template <class... Args>
 inline void critical(const std::format_string<Args...>& format, Args&&... args) {
-    log<Level::CRITICAL, Args...>(format, std::forward<Args>(args)...);
+    log<Level::critical, Args...>(format, std::forward<Args>(args)...);
 }
 
 }
