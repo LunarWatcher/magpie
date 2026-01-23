@@ -4,10 +4,12 @@
 #include "magpie/transport/TCPServer.hpp"
 #include <nghttp2/nghttp2.h>
 
+#include <openssl/ssl.h>
+
 namespace magpie { class BaseApp; }
 
 namespace magpie::transport {
-class Connection;
+class BaseConnection;
 }
 
 namespace magpie::application {
@@ -44,10 +46,16 @@ extern int onFrame(
     void*
 );
 
+extern int onAlpnSelectProto(
+    SSL* ssl, const unsigned char** out,
+    unsigned char* outLen, const unsigned char* in, 
+    unsigned int inLen, void* arg
+);
+
 }
 
 struct UserData {
-    transport::Connection* conn;
+    transport::BaseConnection* conn;
     std::unordered_map<size_t, std::unordered_map<std::string, std::string>> headers;
 };
 
@@ -56,11 +64,15 @@ private:
     nghttp2_session* sess;
     nghttp2_session_callbacks* callbacks;
 
-    transport::Connection* conn;
+
+    BaseApp* app;
+    transport::BaseConnection* conn;
     UserData data;
+
+    void createSslContext();
 public:
     Http2Adapter(
-        transport::Connection* conn
+        transport::BaseConnection* conn
     );
     ~Http2Adapter();
 

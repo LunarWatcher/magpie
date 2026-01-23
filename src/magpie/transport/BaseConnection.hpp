@@ -1,0 +1,97 @@
+#pragma once
+
+#include "magpie/application/Http2Adapter.hpp"
+#include "magpie/logger/Logger.hpp"
+#include <array>
+#include <memory>
+
+namespace magpie {
+class BaseApp;
+}
+
+namespace magpie::transport {
+
+class BaseConnection {
+public:
+    std::array<char, 4096> recv;
+    // TODO: make the protocol dynamic
+    // TODO: Alternatively: Support multiple. ALPN should make this fairly easy to do
+    application::Http2Adapter adapter;
+    BaseApp* app;
+
+    BaseConnection(BaseApp* app) : adapter(this), app(app) {}
+    virtual ~BaseConnection() = default;
+
+    virtual size_t write(
+        const asio::const_buffer& buff
+    ) = 0;
+    virtual void start() = 0;
+
+    virtual void doRead() = 0;
+    virtual void doBulkWrite(
+        const std::string& data
+    ) = 0;
+
+};
+
+template <typename SocketType>
+class CommonConnection : public BaseConnection, public std::enable_shared_from_this<CommonConnection<SocketType>> {
+public:
+
+    CommonConnection(
+        BaseApp* app
+    ) : BaseConnection(app) {}
+
+    virtual ~CommonConnection() = default;
+
+    virtual SocketType& getSocket() = 0; 
+
+    size_t write(
+        const asio::const_buffer& buff
+    ) override {
+        return asio::write(
+            getSocket(),
+            buff
+        );
+    }
+
+    void doRead() override {
+        auto self = this->shared_from_this();
+        getSocket().async_read_some(
+            asio::buffer(recv),
+            [self](const asio::error_code& ec, size_t bytes) {
+                if (!ec && bytes > 0) {
+                    self->adapter.parse(
+                        self->recv,
+                        bytes
+                    );
+
+                    self->doRead();
+                }
+            }
+        );
+    }
+
+    void start() override {
+        doRead();
+    }
+
+    void doBulkWrite(
+        const std::string& data
+    ) override {
+        auto self = this->shared_from_this();
+        asio::async_write(
+            self->getSocket(),
+            asio::buffer(data),
+            [](const asio::error_code& err, size_t) {
+                if (err) {
+                    logger::error(
+                        "{}", err.message()
+                    );
+                }
+            }
+        );
+    }
+};
+
+}

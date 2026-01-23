@@ -2,12 +2,20 @@
 
 #include <nghttp2/nghttp2.h>
 #include "magpie/transport/Connection.hpp"
+#include "magpie/transport/BaseConnection.hpp"
 #include "magpie/App.hpp"
+#include <stdexcept>
 #include <string>
+
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 namespace magpie::application {
 
-Http2Adapter::Http2Adapter(transport::Connection* conn): conn(conn) {
+Http2Adapter::Http2Adapter(transport::BaseConnection* conn) :
+    app(conn->app),
+    conn(conn)
+{
 
     if (auto result = nghttp2_session_callbacks_new(
         &callbacks
@@ -41,6 +49,13 @@ Http2Adapter::Http2Adapter(transport::Connection* conn): conn(conn) {
         std::cerr << "Failed to create session: " << result << std::endl;
         throw std::runtime_error("Session init error");
     }
+
+    // if (conn->ssl) {
+
+    //     SSL_get0_alpn_selected(
+    //         conn->ssl,
+    //     )
+    // }
 
     nghttp2_settings_entry settings[] = {
         {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 1}
@@ -90,8 +105,7 @@ nghttp2_ssize _detail::onSend(
     void* userData
 ) {
     auto* conn = static_cast<UserData*>(userData)->conn;
-    return asio::write(
-        conn->socket,
+    return conn->write(
         asio::buffer(data, length)
     );
 
@@ -133,7 +147,7 @@ int _detail::onFrame(
         nva.push_back(makeNv(a, b));
         nva.push_back(makeNv(c, d));
         nva.push_back(makeNv(e, f));
-        // Looks like this is where we'd feed in arbitrary data from the server
+
         auto app = conn->app;
         if (app == nullptr) {
             [[unlikely]]
@@ -143,6 +157,8 @@ int _detail::onFrame(
         auto& headers = ud.headers[frame->hd.stream_id];
         auto& destination = headers.at(":path");
 
+        // This is where we'd feed in data to build a response. nghttp2_data_provider should probably take a Response
+        // object as its data source.
         router.invokeRoute(destination);
 
         nghttp2_data_provider2 dp;
@@ -222,6 +238,17 @@ int _detail::onChunkRecv(
         )
         << std::endl;
     return 0;
+}
+
+int _detail::onAlpnSelectProto(
+    SSL*, const unsigned char** out,
+    unsigned char* outLen, const unsigned char* in, 
+    unsigned int inLen, void*
+) {
+    if (auto err = nghttp2_select_alpn(out, outLen, in, inLen); err != 1) {
+        return SSL_TLSEXT_ERR_NOACK;
+    }
+    return SSL_TLSEXT_ERR_OK;
 }
 
 }

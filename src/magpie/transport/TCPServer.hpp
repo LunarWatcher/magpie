@@ -6,6 +6,7 @@
 
 #include <asio.hpp>
 #include <asio/io_context.hpp>
+#include <asio/ssl.hpp>
 
 
 namespace magpie { class BaseApp; }
@@ -15,6 +16,8 @@ class TCPServer {
 private:
     asio::io_context ctx;
     asio::ip::tcp::acceptor ipv4Acceptor;
+    std::optional<asio::ssl::context> sslCtx;
+
     unsigned int concurrency;
     BaseApp* app;
 

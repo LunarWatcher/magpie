@@ -1,5 +1,7 @@
 #include "magpie/App.hpp"
+#include "magpie/config/SSLConfig.hpp"
 #include "magpie/data/CommonData.hpp"
+#include <iostream>
 
 struct Sessions { };
 
@@ -11,8 +13,11 @@ int main() {
     std::shared_ptr<Context> ctx = std::make_shared<Context>();
     magpie::App<Context> app {
         magpie::AppConfig {
-            .port = 8080
-        }
+            .port = 8080,
+            // Note: fromGeneratedCertificate is for test use only. You should lock this behind a macro or other form of
+            // check. Never use this in a production environment.
+            .ssl = magpie::SSLConfig::fromGeneratedCertificate(),
+        },
     };
 
     app.route<"/">([](Context*) {

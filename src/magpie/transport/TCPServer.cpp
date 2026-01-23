@@ -1,6 +1,8 @@
 #include "TCPServer.hpp"
+#include "magpie/config/SSLConfig.hpp"
 #include "magpie/logger/Logger.hpp"
 #include "magpie/transport/Connection.hpp"
+#include "magpie/App.hpp"
 #include <asio/error_code.hpp>
 #include <asio/post.hpp>
 #include <future>
@@ -23,6 +25,14 @@ TCPServer::TCPServer(
     concurrency(concurrency),
     app(app)
 {
+    app->getConfig().ssl.and_then([](const SSLConfig& ssl) {
+        SSL_CTX_set_alpn_select_cb(
+            ssl.sslCtx,
+            application::_detail::onAlpnSelectProto,
+            nullptr
+        );
+        return std::optional<int>(0);
+    });
     asio::error_code err;
     ipv4Acceptor.listen(
         asio::ip::tcp::acceptor::max_listen_connections,
@@ -43,14 +53,17 @@ void TCPServer::doAccept() {
     // TODO: I do not like this pattern. Fix
     auto conn = std::make_shared<Connection>(this->app, ctx);
     ipv4Acceptor.async_accept(
-        conn->socket,
+        conn->getSocket(),
         // TODO: asio has built-in C++20 coroutine support. Figure out how to shoehorn it in here
         // (or figure out how to add C++20 coroutines some other way)
         [conn, this](const asio::error_code& err) {
             if (!err) {
                 conn->start();
             } else {
-                std::cout << "Connection error: " << err.message() << "\n";
+                logger::error(
+                    "Connection error: {}",
+                    err.message()
+                );
             }
 
             this->doAccept();
@@ -58,8 +71,7 @@ void TCPServer::doAccept() {
     );
 }
 
-void TCPServer::start(
-) {
+void TCPServer::start() {
     std::vector<std::future<void>> threads;
     for (unsigned int i = 0; i < this->concurrency; ++i) {
         threads.push_back(

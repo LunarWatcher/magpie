@@ -36,7 +36,7 @@ HTTPS and compression are both core parts of the internet at this point, so they
 * CMake
 * `libnghttp2-dev libssl-dev libasio-dev`
     * Note: boost::asio does not work
-    * Conan or fetchcontent providing these should also work, but is currently untested
+    * Note: `libnghttp2-dev` currently doesn't work on Linux Mint due to the package being out of date.
 
 ## License
 

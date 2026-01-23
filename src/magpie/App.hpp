@@ -1,23 +1,25 @@
 #pragma once
 
+#include "magpie/config/AppConfig.hpp"
 #include "magpie/data/CommonData.hpp"
-#include "magpie/logger/Logger.hpp"
 #include "magpie/routing/Compile.hpp"
 #include "magpie/routing/Router.hpp"
 #include "magpie/transport/TCPServer.hpp"
 #include <memory>
 #include <type_traits>
+
 namespace magpie {
 
-struct AppConfig {
-    unsigned short port = 8080;
-    unsigned int concurrency = std::thread::hardware_concurrency();
-};
-
 class BaseApp {
+protected:
+    const AppConfig config;
 public:
+    BaseApp(AppConfig&& config) : config(std::move(config)) {}
     ~BaseApp() = default;
+
     virtual const routing::BaseRouter& getRouter() = 0;
+
+    const AppConfig& getConfig() { return config; }
 };
 
 template <data::IsCommonData ContextType = data::CommonData>
@@ -32,8 +34,8 @@ public:
 
     App(
         std::shared_ptr<ContextType> dataStore,
-        const AppConfig& conf = {}
-    ): 
+        AppConfig&& conf = {}
+    ): BaseApp(std::move(conf)),
         serv(this, conf.port, conf.concurrency),
         dataStore(dataStore),
         router(std::make_shared<routing::Router<ContextType>>())
@@ -43,8 +45,8 @@ public:
 
     template <typename = std::enable_if<std::is_trivially_default_constructible_v<ContextType>>>
     App(
-        const AppConfig& conf = {}
-    ): App(std::make_shared<ContextType>(), conf) {
+        AppConfig&& conf = {}
+    ): App(std::make_shared<ContextType>(), std::move(conf)) {
 
     }
     ~App() = default;
