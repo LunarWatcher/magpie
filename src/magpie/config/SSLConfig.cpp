@@ -11,48 +11,8 @@
 
 namespace magpie {
 
-void SSLConfig::createSslContext() {
-    SSL_CTX* sslCtx = SSL_CTX_new(TLS_server_method());
-
-    if (!sslCtx) {
-        throw std::runtime_error(
-            std::string {ERR_error_string(ERR_get_error(), nullptr)}
-        );
-    }
-
-    SSL_CTX_set_options(
-        sslCtx,
-        SSL_OP_ALL | SSL_OP_NO_SSLv2 
-        | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION 
-        | SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION
-    );
-
-    // TODO: according to the docs, this is an OpenSSL 3.0 thing, which may or may not work with the distro's 1.1.x
-    // version. The function does appear in 1.1.1f though:
-    // https://manpages.ubuntu.com/manpages/focal/man3/SSL_CTX_set1_groups.3ssl.html
-    if (SSL_CTX_set1_groups_list(sslCtx, "P-521:P-384:P-256") != 1) {
-        throw std::runtime_error("Failed to set groups list");
-    }
-
-    if (SSL_CTX_use_PrivateKey_file(sslCtx, keyFile.c_str(), SSL_FILETYPE_PEM) != 1) {
-        throw std::runtime_error("Failed to read PK");
-    }
-    if (SSL_CTX_use_certificate_chain_file(sslCtx, certFile.c_str()) != 1) {
-        throw std::runtime_error("Failed to read certificate file");
-    }
-
-    this->sslCtx = sslCtx;
-}
-
 SSLConfig::SSLConfig(const std::string& keyFile, const std::string& certFile) 
     : keyFile(keyFile), certFile(certFile) {
-    createSslContext();
-}
-
-SSLConfig::~SSLConfig() {
-    if (sslCtx != nullptr) {
-        SSL_CTX_free(this->sslCtx);
-    }
 }
 
 SSLConfig SSLConfig::fromGeneratedCertificate() {

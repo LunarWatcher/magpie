@@ -5,15 +5,9 @@
 namespace magpie {
 
 class SSLConfig {
-private:
+public:
     std::string keyFile;
     std::string certFile;
-
-    void createSslContext();
-public:
-
-    SSL_CTX* sslCtx = nullptr;
-
     SSLConfig(
         const std::string& keyFile, 
         const std::string& certFile
@@ -21,11 +15,8 @@ public:
     SSLConfig(SSLConfig&) = delete;
     SSLConfig(SSLConfig&& other):
         keyFile(std::move(other.keyFile)), 
-        certFile(std::move(other.certFile)),
-        sslCtx(std::move(other.sslCtx)) {
-        other.sslCtx = nullptr;
+        certFile(std::move(other.certFile)) {
     }
-    ~SSLConfig();
 
     /**
      * Generates SSL certificates, and then initialises an SSLConfig with that generated certificate. 

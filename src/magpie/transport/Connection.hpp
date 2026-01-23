@@ -29,6 +29,7 @@ public:
     ~Connection() = default;
 
     decltype(socket)& getSocket() override { return socket; }
+    decltype(socket)& getRawSocket() override { return socket; }
 };
 
 }

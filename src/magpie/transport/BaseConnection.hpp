@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _WIN32
+#include <SDKDDKVer.h>
+#endif
+
 #include "magpie/application/Http2Adapter.hpp"
 #include "magpie/logger/Logger.hpp"
 #include <array>
@@ -34,8 +38,11 @@ public:
 
 };
 
-template <typename SocketType>
-class CommonConnection : public BaseConnection, public std::enable_shared_from_this<CommonConnection<SocketType>> {
+template <typename SocketType, typename NativeType = SocketType>
+class CommonConnection
+    : public BaseConnection,
+      public std::enable_shared_from_this<CommonConnection<SocketType, NativeType>>
+{
 public:
 
     CommonConnection(
@@ -44,6 +51,7 @@ public:
 
     virtual ~CommonConnection() = default;
 
+    virtual NativeType& getRawSocket() = 0; 
     virtual SocketType& getSocket() = 0; 
 
     size_t write(
