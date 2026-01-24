@@ -18,7 +18,7 @@ namespace magpie::utility {
  * will be handled separately, and likely also piped through either a middleware or a special error handler. Not sure
  * how I want to structure that yet.
  */
-constexpr void runWithErrorLogging(
+inline void runWithErrorLogging(
     std::function<void()> errorHandled
 ) {
 
