@@ -4,10 +4,12 @@
 #include "magpie/transport/Connection.hpp"
 #include "magpie/App.hpp"
 #include "magpie/transport/SSLConnection.hpp"
+#include "magpie/utility/ErrorHandler.hpp"
 #include <asio/error_code.hpp>
 #include <asio/post.hpp>
 #include <future>
 #include <iostream>
+#include <stacktrace>
 
 namespace magpie::transport {
 
@@ -66,45 +68,48 @@ void TCPServer::doAccept() {
             // TODO: asio has built-in C++20 coroutine support. Figure out how to shoehorn it in here
             // (or figure out how to add C++20 coroutines some other way)
             [conn, this](const asio::error_code& err) {
-                if (!err) {
-                    conn->start();
-                } else {
-                    logger::error(
-                        "Connection error: {}",
-                        err.message()
-                    );
-                }
-
+                utility::runWithErrorLogging([&]() {
+                    if (!err) {
+                        conn->start();
+                    } else {
+                        logger::error(
+                            "Connection error: {}",
+                            err.message()
+                        );
+                    }
+                });
                 this->doAccept();
             }
         );
     } else {
         // TODO: I do not like this pattern. Fix
-        // auto conn = std::make_shared<SSLConnection>(
-        //     this->app,
-        //     ctx,
-        //     this->sslCtx.value()
-        // );
-        auto conn = std::shared_ptr<SSLConnection>(
-            new SSLConnection(this->app, ctx, this->sslCtx.value())
+        auto conn = std::make_shared<SSLConnection>(
+            this->app,
+            ctx,
+            this->sslCtx.value()
         );
+        // TODO: std::make_shared eradicates type hinting, which makes this signature better:
+        // auto conn = std::shared_ptr<SSLConnection>(
+        //     new SSLConnection(this->app, ctx, this->sslCtx.value())
+        // );
+        // But I vaguely remember there being downsides. Probably worth figuring it out and writing notes on it
         ipv4Acceptor.async_accept(
             conn->getRawSocket(),
             // TODO: asio has built-in C++20 coroutine support. Figure out how to shoehorn it in here
             // (or figure out how to add C++20 coroutines some other way)
             [conn, this](const asio::error_code& err) {
-                conn->getSocket()
-                    .handshake(SSLSocketWrapper::server);
-
-                if (!err) {
-                    conn->start();
-                } else {
-                    logger::error(
-                        "Connection error: {}",
-                        err.message()
-                    );
-                }
-
+                utility::runWithErrorLogging([&]() {
+                    if (!err) {
+                        conn->getSocket()
+                            .handshake(SSLSocketWrapper::server);
+                        conn->start();
+                    } else {
+                        logger::error(
+                            "Connection error: {}",
+                            err.message()
+                        );
+                    }
+                });
                 this->doAccept();
             }
         );
