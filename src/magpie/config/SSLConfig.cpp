@@ -95,8 +95,8 @@ SSLConfig SSLConfig::fromGeneratedCertificate() {
         }
 
         // Pretty sure this is standard C: https://en.cppreference.com/w/c/io/fopen
-        FILE* keyFilePtr = fopen(key.c_str(), "wb");
-        FILE* certFilePtr = fopen(cert.c_str(), "wb");
+        FILE* keyFilePtr = fopen(key.string().c_str(), "wb");
+        FILE* certFilePtr = fopen(cert.string().c_str(), "wb");
 
         PEM_write_PrivateKey(
             keyFilePtr,
@@ -120,8 +120,7 @@ SSLConfig SSLConfig::fromGeneratedCertificate() {
         X509_free(x509);
     }
 
-    // Converting straight to a c_str because std::filesystem::path is weird some times
-    return SSLConfig(key.c_str(), cert.c_str());
+    return SSLConfig(key.string().c_str(), cert.string().c_str());
 }
 
 }
