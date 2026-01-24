@@ -2,6 +2,7 @@
 
 #include <openssl/types.h>
 #include <string>
+
 namespace magpie {
 
 class SSLConfig {

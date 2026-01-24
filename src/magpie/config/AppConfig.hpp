@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magpie/config/SSLConfig.hpp"
+#include <optional>
 #include <thread>
 
 namespace magpie {
