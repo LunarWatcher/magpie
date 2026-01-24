@@ -24,27 +24,9 @@ SSLConfig SSLConfig::fromGeneratedCertificate() {
     std::filesystem::create_directories(sslRoot);
 
     if (!std::filesystem::exists(key) && !std::filesystem::exists(cert)) {
-        EVP_PKEY* privateKey = EVP_PKEY_new();
-        auto* pkeyCtx = EVP_PKEY_CTX_new_id(
-            EVP_PKEY_ED25519,
-            nullptr
-        );
-
-        if (!pkeyCtx) {
-            // TODO: Real error handling (copy from the other function)
-            // ... or do I just not care?
-            throw std::runtime_error("Looks like something went badly");
-        }
-
-        if (EVP_PKEY_keygen_init(pkeyCtx) <= 0) {
-            // TODO: Real error handling (copy from the other function)
-            throw std::runtime_error("Looks like something went badly");
-        }
-
-        if (EVP_PKEY_keygen(pkeyCtx, &privateKey) <= 0) {
-            // TODO: Real error handling (copy from the other function)
-            throw std::runtime_error("Looks like something went badly");
-        }
+        // Future note: when browsers finally start supporting ED25519, 4e147e2bc778ff468985bd89418715a1ce65b5b3 was the
+        // last commit that contained code here for generating ED25519 certs.
+        auto* privateKey = EVP_RSA_gen(4096);
 
         auto* x509 = X509_new();
 
@@ -84,7 +66,8 @@ SSLConfig SSLConfig::fromGeneratedCertificate() {
         if (!X509_sign(
             x509,
             privateKey,
-            nullptr
+            // nullptr // Null with ED25519
+            EVP_sha512()
         )) {
             
             throw std::runtime_error(std::string {
@@ -115,7 +98,6 @@ SSLConfig SSLConfig::fromGeneratedCertificate() {
         fclose(certFilePtr);
 
         EVP_PKEY_free(privateKey);
-        EVP_PKEY_CTX_free(pkeyCtx);
 
         X509_free(x509);
     }
