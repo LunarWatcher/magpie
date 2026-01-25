@@ -8,8 +8,6 @@
 #include <asio/error_code.hpp>
 #include <asio/post.hpp>
 #include <future>
-#include <iostream>
-#include <stacktrace>
 
 namespace magpie::transport {
 

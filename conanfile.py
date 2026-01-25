@@ -15,3 +15,7 @@ class Magpie(ConanFile):
         self.requires("asio/1.36.0")
         # Unused, will be used Later:tm:
         self.requires("zlib/1.3.1")
+
+        self.test_requires(
+            "cpr/1.14.1"
+        )

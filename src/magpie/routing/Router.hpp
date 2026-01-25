@@ -5,6 +5,9 @@
 #include "magpie/except/RouteException.hpp"
 #include "magpie/routing/Compile.hpp"
 #include "magpie/routing/BaseRoute.hpp"
+#include "magpie/transfer/Request.hpp"
+#include "magpie/transfer/Response.hpp"
+#include "magpie/transfer/StatusCode.hpp"
 #include <tuple>
 
 namespace magpie::routing {
@@ -35,17 +38,19 @@ struct Route : public BaseRoute<ContextType> {
         };
     }
 
-    virtual void invoke(
+    virtual Response invoke(
         const std::vector<std::string_view>& requestedPath,
-        ContextType* context
+        ContextType* context,
+        Request& req
     ) override {
         if constexpr (Size == 0) {
-            callback(context);
+            return callback(context, req);
         } else {
-            std::apply(
+            return std::apply(
                 [&](auto&&... converted) {
-                    callback(
+                    return callback(
                         context,
+                        req,
                         std::forward<decltype(converted)>(converted)...
                     );
                 },
@@ -62,8 +67,9 @@ struct Route : public BaseRoute<ContextType> {
 class BaseRouter {
 public:
     virtual ~BaseRouter() = default;
-    virtual void invokeRoute(
-        const std::string& path
+    virtual Response invokeRoute(
+        const std::string& path,
+        Request& req
     ) const = 0;
 };
 
@@ -119,8 +125,9 @@ public:
         return out;
     }
 
-    void invokeRoute(
-        const std::string& path
+    Response invokeRoute(
+        const std::string& path,
+        Request& req
     ) const override {
         // Compact
         
@@ -139,12 +146,17 @@ public:
 
         if (callback) {
             auto& ptr = *callback;
-            ptr->invoke(
+            return ptr->invoke(
                 segments,
-                nullptr
+                nullptr,
+                req
             );
         } else {
             // 404
+            return Response(
+                Status::NOT_FOUND,
+                "404 not found"
+            );
         }
         
     }

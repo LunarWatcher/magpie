@@ -13,8 +13,10 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Catch2)
 
+find_package(cpr REQUIRED)
+
 target_link_libraries(tests Catch2::Catch2WithMain)
-target_link_libraries(tests magpie)
+target_link_libraries(tests magpie cpr::cpr)
 
 target_include_directories(tests PUBLIC src/)
 

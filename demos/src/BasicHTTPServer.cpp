@@ -1,7 +1,7 @@
 #include "magpie/App.hpp"
 #include "magpie/config/SSLConfig.hpp"
 #include "magpie/data/CommonData.hpp"
-#include <iostream>
+#include "magpie/transfer/Response.hpp"
 
 struct Sessions { };
 
@@ -20,16 +20,22 @@ int main() {
         },
     };
 
-    app.route<"/">([](Context*) {
-        std::cout << "You have sunk my battleship" << std::endl;
+    app.route<"/">([](Context*, magpie::Request&) -> magpie::Response {
+        return magpie::Response(
+            magpie::Status::OK, "Good girl :3"
+        );
     });
 
-    app.route<"/{string}">([](Context*, const std::string_view& v) {
-        std::cout << "URL component: " << v << std::endl;
+    app.route<"/{string}">([](Context*, magpie::Request&, const std::string_view& v) {
+        return magpie::Response(
+            magpie::Status::IM_A_TEAPOT, std::format(
+                "Where is your god now, {}?", v
+            )
+        );
     });
-    app.route<"/test/{string}">([](Context*, const std::string_view& v) {
-        std::cout << "Subroute: " << v << std::endl;
-    });
+    // app.route<"/test/{string}">([](Context*, const std::string_view& v) {
+    //     std::cout << "Subroute: " << v << std::endl;
+    // });
 
-    app.run(true);
+    app.run();
 }

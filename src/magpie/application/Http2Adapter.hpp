@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magpie/application/Adapter.hpp"
+#include "magpie/transfer/Request.hpp"
 #include "magpie/transport/TCPServer.hpp"
 #include <nghttp2/nghttp2.h>
 
@@ -52,18 +53,28 @@ extern int onAlpnSelectProto(
     unsigned int inLen, void* arg
 );
 
+extern int onStreamClose(
+    nghttp2_session *session,
+    int32_t stream_id,
+    uint32_t error_code,
+    void *user_data
+);
+
 }
 
 struct UserData {
     transport::BaseConnection* conn;
-    std::unordered_map<size_t, std::unordered_map<std::string, std::string>> headers;
+
+    /**
+     * Maps stream IDs to requests.
+     */
+    std::unordered_map<int, std::shared_ptr<Request>> requests;
 };
 
 class Http2Adapter : public Adapter {
 private:
     nghttp2_session* sess;
     nghttp2_session_callbacks* callbacks;
-
 
     BaseApp* app;
     transport::BaseConnection* conn;

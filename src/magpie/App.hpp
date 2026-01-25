@@ -62,14 +62,8 @@ public:
             );
     }
 
-    void run(
-        bool blocking = true
-    ) {
-        if (blocking) {
-            serv.start();
-        } else {
-            throw std::runtime_error("Non-blocking run is not yet implemented");
-        }
+    void run() {
+        serv.start();
     }
 
     void shutdown() {

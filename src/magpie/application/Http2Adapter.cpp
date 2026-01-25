@@ -39,6 +39,10 @@ Http2Adapter::Http2Adapter(transport::BaseConnection* conn) :
         callbacks,
         _detail::onHeaders
     );
+    nghttp2_session_callbacks_set_on_stream_close_callback(
+        callbacks,
+        _detail::onStreamClose
+    );
 
     data.conn = conn;
     if (auto result = nghttp2_session_server_new(
@@ -119,16 +123,17 @@ int _detail::onFrame(
     auto& ud = *static_cast<UserData*>(userData);
     auto* conn = ud.conn;
     if (frame->hd.type == NGHTTP2_HEADERS &&
-        frame->hd.flags & NGHTTP2_FLAG_END_STREAM) {
-        std::cout << "End of stream" << std::endl;
+        frame->hd.flags & NGHTTP2_FLAG_END_HEADERS) {
+        logger::debug("End of header stream");
     }
+    // TODO: this code doesn't make much sense if we're 
     if (
         frame->hd.type == NGHTTP2_HEADERS
         && frame->headers.cat == NGHTTP2_HCAT_REQUEST
     ) {
-        std::cout << "Sending response" << std::endl;
+        logger::debug("Starting response");
 
-        int32_t stream_id = frame->hd.stream_id;
+        int32_t streamId = frame->hd.stream_id;
         std::vector<nghttp2_nv> nva;
         // TODO: this is dumb and you should feel bad
         auto makeNv = [](const std::string &name, const std::string &value) {
@@ -154,31 +159,37 @@ int _detail::onFrame(
             throw std::runtime_error("Critical developer error");
         }
         const auto& router = app->getRouter();
-        auto& headers = ud.headers[frame->hd.stream_id];
+        auto& request = ud.requests[streamId];
+        if (request == nullptr) {
+            logger::error("Failure: request is nullptr");
+            return NGHTTP2_ERR_CALLBACK_FAILURE;
+        }
+        auto& headers = request->headers;
         auto& destination = headers.at(":path");
 
         // This is where we'd feed in data to build a response. nghttp2_data_provider should probably take a Response
         // object as its data source.
-        router.invokeRoute(destination);
+        Response res = router.invokeRoute(destination, *request);
 
         nghttp2_data_provider2 dp;
+        dp.source.ptr = &res;
         dp.read_callback = [](
             nghttp2_session *,
             int32_t,
             uint8_t *buf, size_t length,
             uint32_t *data_flags,
-            nghttp2_data_source*,
+            nghttp2_data_source* src,
             void *
         ) -> nghttp2_ssize {
-            std::string response = "Hewwo world :3";
-            size_t len = std::min(length, response.size());
-            std::memcpy(buf, response.c_str(), len);
+            auto res = (Response*) src->ptr;
+            size_t len = std::min(length, res->body.size());
+            std::memcpy(buf, res->body.c_str(), len);
             *data_flags = NGHTTP2_DATA_FLAG_EOF;
             return (nghttp2_ssize) len;
         };
         int rv = nghttp2_submit_response2(
             sess,
-            stream_id,
+            streamId,
             nva.data(),
             nva.size(),
             &dp
@@ -204,6 +215,12 @@ int _detail::onHeaders(
     uint8_t, void* userData
 ) {
     auto& ud = *static_cast<UserData*>(userData);
+    auto& request = ud.requests[frame->hd.stream_id];
+
+    // Headers are always sent first, so if the pointer is null, it'll be here
+    if (request == nullptr) {
+        request = std::make_shared<Request>();
+    }
     if (
         frame->hd.type == NGHTTP2_HEADERS
         && frame->headers.cat == NGHTTP2_HCAT_REQUEST
@@ -211,13 +228,8 @@ int _detail::onHeaders(
         // TODO: string_view? We probably want to copy everything into std::strings for ownership though
         std::string n((const char*) name, namelen);
         std::string v((const char*) value, valuelen);
-        std::cout << "Header: " << n << " = " << v << "\n";
 
-        ud.headers[frame->hd.stream_id][n] = v;
-
-        if (n == "content-length") {
-            // TODO: reserve size in request object
-        }
+        request->headers[n] = v;
     }
     return 0;
 }
@@ -226,17 +238,21 @@ int _detail::onHeaders(
 int _detail::onChunkRecv(
     nghttp2_session*,
     uint8_t,
-    int32_t,
+    int32_t streamId,
     const uint8_t* data,
     size_t len,
-    void*
+    void* userData
 ) {
-    std::cout << "Chunk size " << len << " with content "
-        << std::string(
-            (const char*) data,
-            len
-        )
-        << std::endl;
+    // std::cout << "Chunk size " << len << " with content "
+    //     << std::string(
+    //         (const char*) data,
+    //         len
+    //     )
+    //     << std::endl;
+    auto& ud = *static_cast<UserData*>(userData);
+    // TODO: This is horrible for performance
+    auto& request = ud.requests[streamId];
+    request->body += std::string((const char*) data, len);
     return 0;
 }
 
@@ -249,6 +265,20 @@ int _detail::onAlpnSelectProto(
         return SSL_TLSEXT_ERR_NOACK;
     }
     return SSL_TLSEXT_ERR_OK;
+}
+
+int _detail::onStreamClose(
+    nghttp2_session*,
+    int32_t streamId,
+    uint32_t,
+    void *userData
+) {
+    auto& ud = *static_cast<UserData*>(userData);
+    auto it = ud.requests.find(streamId);
+    if (it != ud.requests.end()) {
+        ud.requests.erase(it);
+    }
+    return 0;
 }
 
 }
