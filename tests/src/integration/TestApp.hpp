@@ -62,19 +62,15 @@ struct TestApp {
     }
 
     void injectDefault(cpr::Session& sess) {
-        sess.SetSslOptions(
-            cpr::Ssl(
-                cpr::ssl::ALPN { true },
-                cpr::ssl::VerifyPeer(0),
-                cpr::ssl::VerifyHost(0),
-                cpr::ssl::VerifyStatus(0)
-            )
-        );
+        sess.SetVerifySsl(false);
         sess.SetHttpVersion(
             cpr::HttpVersion {
                 cpr::HttpVersionCode::VERSION_2_0
             }
         );
+        sess.SetTimeout(cpr::Timeout {
+            std::chrono::seconds(10)
+        });
     }
 
     /**
