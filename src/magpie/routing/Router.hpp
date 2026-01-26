@@ -9,6 +9,7 @@
 #include "magpie/transfer/Response.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 #include <tuple>
+#include <iostream>
 
 namespace magpie::routing {
 
@@ -106,13 +107,15 @@ public:
     constexpr std::vector<std::string_view> pathToComponents(const std::string_view& path) const {
         size_t next;
         size_t start = 0;
-        std::vector<std::string_view> out;
+        std::vector<std::string_view> out {
+            "/"
+        };
         while ((next = path.find('/', start + 1)) != std::string::npos) {
-            // `/segment//whatever`
-            if (next - start == 1) {
+            if (next - start == 1) { // `/segment//whatever`
                 start = next;
-            } else if (next != start) {
+            } else if (next != start) { // /[test/] (selection in brackets)
                 out.push_back(path.substr(start + 1, (next - start - 1)));
+                out.push_back("/");
                 start = next;
             }
         }

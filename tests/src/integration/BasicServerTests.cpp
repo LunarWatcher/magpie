@@ -20,15 +20,43 @@ TEST_CASE("Test plain routing", "[integration]") {
     using namespace std::literals;
 
     REQUIRE(app.url().starts_with("https://"));
-    INFO(app.url());
 
     auto response = app.Get(
         cpr::Url {
             app.url()
         }
     );
+    INFO(response.url);
     INFO(response.error.message);
     REQUIRE(response.status_code == 418);
     REQUIRE(response.text == "Good girl :3");
+    REQUIRE(response.header.at("content-type") == "text/plain");
+}
+
+TEST_CASE("Test argument routing", "[integration]") {
+    TestApp app;
+
+    app->route<"/{string}">([](auto*, magpie::Request&, const std::string_view& v) {
+        return magpie::Response(
+            magpie::Status::OK,
+            std::format("Server got {}", v)
+        );
+    });
+
+    app.start();
+    using namespace std::literals;
+
+    REQUIRE(app.url().starts_with("https://"));
+
+    auto response = app.Get(
+        cpr::Url {
+            app.url("/hewwo")
+        }
+    );
+
+    INFO(response.url);
+    INFO(response.error.message);
+    REQUIRE(response.status_code == 200);
+    REQUIRE(response.text == "Server got hewwo");
     REQUIRE(response.header.at("content-type") == "text/plain");
 }

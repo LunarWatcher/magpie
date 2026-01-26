@@ -12,14 +12,14 @@ TEST_CASE("Path splitting", "[Router]") {
             std::string
         >
     > testCases = {
-        { "/", {} , "A single slash has no components"},
-        {"/test", {"test"}, "A standard route includes no slashes"},
-        {"/test/path/whatever", {"test", "path", "whatever"}, "A long standard route includes no slashes"},
-        {"//", {}, "Double slashes are normalised"},
-        {"///////", {}, "A bunch of slashes are normalised"},
-        {"/test//whatever", {"test", "whatever"}, "Double slashes are normalised in long paths"},
-        {"/a///b//c", {"a", "b", "c"}, "Multi-slashes are normalised in short path segments"},
-        {"/a///b//c////", {"a", "b", "c"}, "Multi-slashes are normalised in short path segments with trailing slashes"},
+        { "/", {"/"} , "A single slash has a components"},
+        {"/test", {"/", "test"}, "A standard route includes slash as a separate component"},
+        {"/test/path/whatever", {"/", "test", "/", "path", "/", "whatever"}, "A long standard route is split correctly"},
+        {"//", {"/"}, "Double slashes are normalised"},
+        {"///////", {"/"}, "A bunch of slashes are normalised"},
+        {"/test//whatever", {"/", "test", "/", "whatever"}, "Double slashes are normalised in long paths"},
+        {"/a///b//c", {"/", "a", "/", "b", "/", "c"}, "Multi-slashes are normalised in short path segments"},
+        {"/a///b//c////", {"/", "a", "/", "b", "/", "c", "/"}, "Multi-slashes are normalised in short path segments with trailing slashes"},
     };
 
     magpie::routing::Router<magpie::data::CommonData> router;

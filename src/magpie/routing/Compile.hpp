@@ -200,13 +200,21 @@ constexpr std::array<ConstString, params> getParameterTypes() {
 template <FixedString s, size_t matched, size_t params>
 constexpr void parseForIndices(
     std::array<std::pair<ConstString, size_t>, params>& out,
-    size_t slashIndex = 0,
+    size_t slashIndex = 1,
     size_t i = 1
 ) {
     if constexpr (matched == params) {
         return;
     } else {
-        auto newSlashIndex = slashIndex + (s[i] == '/');
+        // This logic should hold:
+        // / [ "/ [idx=1]" ] 
+        //      fails but irrelevant because params = 0]
+        // /whatever : [ "/", "whatever [idx=1]" ]
+        // /whatever/nested : [ "/", "whatever [idx = 1]", "/ [idx = 3]", "nested" ]
+        // /whatever/nested/ : [ "/", "whatever [idx = 1]", "/ [idx = 3]", "nested", "/ [idx = 5]"  ]
+        //      idx=5 fails but it's ignored since it's unreachable (matched == params at idx=3 when nested is found)
+        //      ... assuming these were actually templates and not literal strings, but you get the point
+        auto newSlashIndex = slashIndex + (s[i] == '/') * 2;
         if (i >= s.size) {
             return;
         } 
