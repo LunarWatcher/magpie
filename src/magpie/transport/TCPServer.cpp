@@ -13,7 +13,7 @@ namespace magpie::transport {
 
 TCPServer::TCPServer(
     BaseApp* app,
-    short port,
+    uint16_t port,
     unsigned int concurrency
 ): 
     ctx(concurrency),
@@ -37,6 +37,11 @@ TCPServer::TCPServer(
             ctx.native_handle(),
             application::_detail::onAlpnSelectProto,
             nullptr
+        );
+        SSL_CTX_set_alpn_protos(
+            ctx.native_handle(),
+            (const unsigned char*)"\x02h2",
+            3
         );
         return std::optional(std::move(ctx));
     }) ;
@@ -130,6 +135,14 @@ void TCPServer::start() {
         this->ipv4Acceptor.local_endpoint().port()
     );
     this->ctx.run();
+}
+
+void TCPServer::stop() {
+    this->ctx.stop();
+}
+
+uint16_t TCPServer::getPort() {
+    return this->ipv4Acceptor.local_endpoint().port();
 }
 
 }

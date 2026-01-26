@@ -1,6 +1,7 @@
 #include "Http2Adapter.hpp"
 
 #include <nghttp2/nghttp2.h>
+#include "magpie/transfer/StatusCode.hpp"
 #include "magpie/transport/Connection.hpp"
 #include "magpie/transport/BaseConnection.hpp"
 #include "magpie/App.hpp"
@@ -53,13 +54,6 @@ Http2Adapter::Http2Adapter(transport::BaseConnection* conn) :
         std::cerr << "Failed to create session: " << result << std::endl;
         throw std::runtime_error("Session init error");
     }
-
-    // if (conn->ssl) {
-
-    //     SSL_get0_alpn_selected(
-    //         conn->ssl,
-    //     )
-    // }
 
     nghttp2_settings_entry settings[] = {
         {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 1}
@@ -120,6 +114,10 @@ int _detail::onFrame(
     const nghttp2_frame* frame,
     void* userData
 ) {
+    // These variables are used to manage the lifecycle of the strings we hard-code.
+    static std::string HTTP2_STATUS_HEADER = ":status";
+    static std::string CONTENT_TYPE_HEADER = "content-type";
+
     auto& ud = *static_cast<UserData*>(userData);
     auto* conn = ud.conn;
     if (frame->hd.type == NGHTTP2_HEADERS &&
@@ -145,13 +143,6 @@ int _detail::onFrame(
             nv.flags = NGHTTP2_NV_FLAG_NONE;
             return nv;
         };
-        // These need to be cached as strings because lifecycle, and nghttp2 doesn't seem to copy
-        std::string a = ":status", b = "200",
-            c = "content-type", d = "text/plain",
-            e = "server", f = "trans-rights-are-human-rights";
-        nva.push_back(makeNv(a, b));
-        nva.push_back(makeNv(c, d));
-        nva.push_back(makeNv(e, f));
 
         auto app = conn->app;
         if (app == nullptr) {
@@ -170,6 +161,18 @@ int _detail::onFrame(
         // This is where we'd feed in data to build a response. nghttp2_data_provider should probably take a Response
         // object as its data source.
         Response res = router.invokeRoute(destination, *request);
+
+        for (auto& [header, value] : res.headers) {
+            nva.push_back(makeNv(header, value));
+        }
+
+        // Kinda disappointed HTTP/2 doesn't support status messages, but whatever
+        // It really doesn't make sense to from any objective POV, but it's just such a nice way to fuck around in
+        // certain cases.
+        std::string statusCode = std::to_string(res.code.statusCode);
+
+        nva.push_back(makeNv(HTTP2_STATUS_HEADER, statusCode));
+        nva.push_back(makeNv(CONTENT_TYPE_HEADER, res.contentType));
 
         nghttp2_data_provider2 dp;
         dp.source.ptr = &res;

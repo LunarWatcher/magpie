@@ -1,4 +1,6 @@
 add_executable(tests 
+    src/integration/BasicServerTests.cpp
+
     src/routing/RouteCompilationTests.cpp
     src/routing/RouterTests.cpp
 )

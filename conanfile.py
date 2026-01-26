@@ -17,5 +17,14 @@ class Magpie(ConanFile):
         self.requires("zlib/1.3.1")
 
         self.test_requires(
+            "libcurl/8.17.0"
+        )
+        self.test_requires(
             "cpr/1.14.1"
         )
+
+    def configure(self):
+        # Conan's version of libcurl default-disables like all the protocols,
+        # including http2. For obvious reasons, this is a tiny bit of a problem
+        # when trying to use a libcurl-extension to test an HTTP/2 server
+        self.options["libcurl"].with_nghttp2 = True

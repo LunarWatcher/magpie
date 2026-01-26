@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string_view>
+#include <string>
 
 namespace magpie {
 
@@ -11,7 +12,9 @@ struct StatusCode {
     constexpr StatusCode(
         unsigned short statusCode,
         std::string_view statusLine
-    ) : statusCode(statusCode), statusLine(statusLine) {}
+    ) : statusCode(statusCode),
+        statusLine(statusLine) {
+    }
 
     StatusCode(StatusCode&) = delete;
     StatusCode(StatusCode&&) = delete;
@@ -65,5 +68,7 @@ namespace Status {
     constexpr StatusCode SERVICE_UNAVAILABLE(503, "Service Unavailable");
     constexpr StatusCode GATEWAY_TIMEOUT(504, "Gateway Timeout");
     constexpr StatusCode VARIANT_ALSO_NEGOTIATES(506, "Variant Also Negotiates");
+
 }
+
 }

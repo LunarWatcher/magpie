@@ -7,7 +7,7 @@
 namespace magpie {
 
 struct AppConfig {
-    unsigned short port = 8080;
+    uint16_t port = 8080;
     unsigned int concurrency = std::thread::hardware_concurrency();
 
     std::optional<SSLConfig> ssl = std::nullopt;

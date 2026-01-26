@@ -70,6 +70,10 @@ public:
         serv.stop();
     }
 
+    uint16_t getPort() {
+        return this->serv.getPort();
+    }
+
     const routing::BaseRouter& getRouter() override {
         return *this->router;
     }

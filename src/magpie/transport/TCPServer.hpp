@@ -27,13 +27,15 @@ private:
 public:
     TCPServer(
         BaseApp* app,
-        short port,
+        uint16_t port,
         unsigned int concurrency
     );
     ~TCPServer();
 
     void start();
     void stop();
+
+    uint16_t getPort();
 };
 
 }

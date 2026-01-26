@@ -19,6 +19,12 @@ public:
         certFile(std::move(other.certFile)) {
     }
 
+    SSLConfig& operator=(SSLConfig&& other) {
+        this->keyFile = std::move(other.keyFile);
+        this->certFile = std::move(other.certFile);
+        return *this;
+    }
+
     /**
      * Generates SSL certificates, and then initialises an SSLConfig with that generated certificate. 
      *
