@@ -1,6 +1,6 @@
 # magpie
 
-A C++20 server framework that may or may not end up being less miserable to use. 
+A C++23 server framework that may or may not end up being less miserable to use. 
 
 ## Background
 
