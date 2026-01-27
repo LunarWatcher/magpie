@@ -4,9 +4,9 @@
 #include <type_traits>
 namespace magpie::data {
 
-class App;
+class BaseApp;
 struct CommonData {
-    App* app;
+    BaseApp* app;
 
     virtual ~CommonData() = default;
 };

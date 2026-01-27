@@ -12,6 +12,7 @@ struct Context : public magpie::data::CommonData {
 int main() {
     std::shared_ptr<Context> ctx = std::make_shared<Context>();
     magpie::App<Context> app {
+        ctx,
         magpie::AppConfig {
             .port = 8080,
             // Note: fromGeneratedCertificate is for test use only. You should lock this behind a macro or other form of
@@ -20,14 +21,14 @@ int main() {
         },
     };
 
-    app.route<"/">([](Context*, magpie::Request&) -> magpie::Response {
-        return magpie::Response(
+    app.route<"/">([](Context*, magpie::Request&, magpie::Response& res) {
+        res = magpie::Response(
             magpie::Status::OK, "Good girl :3"
         );
     });
 
-    app.route<"/{string}">([](Context*, magpie::Request&, const std::string_view& v) {
-        return magpie::Response(
+    app.route<"/{string}">([](Context*, magpie::Request&, auto& res, const std::string_view& v) {
+        res = magpie::Response(
             magpie::Status::IM_A_TEAPOT, std::format(
                 "Where is your god now, {}?", v
             )

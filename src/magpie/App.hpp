@@ -40,7 +40,7 @@ public:
         dataStore(dataStore),
         router(std::make_shared<routing::Router<ContextType>>())
     {
-
+        dataStore->app = this;
     }
 
     template <typename = std::enable_if<std::is_trivially_default_constructible_v<ContextType>>>
