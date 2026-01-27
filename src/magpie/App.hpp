@@ -52,7 +52,17 @@ public:
     }
     ~App() = default;
 
-
+    /**
+     * Adds a route. 
+     *
+     * Each call to this method is only allowed to specify one HTTP method. This is because it's considered bad practice
+     * to support more than one HTTP method per function call. However, you can still get around this by calling the
+     * route function several times with the same function.
+     *
+     * HTTP methods have distinct meanings per the standard. It's therefore arguably never appropriate to use the same
+     * handler for different methods. If you have code in common, instead of using the same handler, move that code into
+     * reusable modules.
+     */
     template <
         routing::FixedString path,
         Method::HttpMethod method
