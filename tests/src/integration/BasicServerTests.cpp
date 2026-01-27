@@ -45,29 +45,68 @@ TEST_CASE("Test plain routing", "[integration]") {
 }
 
 TEST_CASE("Test argument routing", "[integration]") {
+    using namespace std::literals;
     TestApp app;
 
-    app->route<"/{string}", magpie::Method::GET>([](auto*, magpie::Request&, magpie::Response& res, const std::string_view& v) {
-        res = magpie::Response(
-            magpie::Status::OK,
-            std::format("Server got {}", v)
-        );
-    });
+    cpr::Response response;
+    SECTION("GET") {
+        app->route<"/{string}", magpie::Method::GET>([](auto*, magpie::Request&, magpie::Response& res, const std::string_view& v) {
+            res = magpie::Response(
+                magpie::Status::OK,
+                std::format("Server got {}", v)
+            );
+        });
 
-    app.start();
-    using namespace std::literals;
+        app.start();
+
+        auto wrongMethod = app.Post(
+            cpr::Url {
+                app.url("/hewwo")
+            }
+        );
+        REQUIRE(wrongMethod.status_code == magpie::Status::METHOD_NOT_ALLOWED);
+
+        response = app.Get(
+            cpr::Url {
+                app.url("/hewwo")
+            }
+        );
+    }
+
+    SECTION("POST") {
+        app->route<"/{string}", magpie::Method::POST>([](auto*, magpie::Request&, magpie::Response& res, const std::string_view& v) {
+            res = magpie::Response(
+                magpie::Status::OK,
+                std::format("Server got {}", v)
+            );
+        });
+
+        app.start();
+
+        auto wrongMethod = app.Get(
+            cpr::Url {
+                app.url("/hewwo")
+            }
+        );
+        REQUIRE(wrongMethod.status_code == magpie::Status::METHOD_NOT_ALLOWED);
+
+        response = app.Post(
+            cpr::Url {
+                app.url("/hewwo")
+            }
+        );
+
+    }
+
+    if (!app) {
+        FAIL("Test section failed");
+    }
 
     REQUIRE(app.url().starts_with("https://"));
-
-    auto response = app.Get(
-        cpr::Url {
-            app.url("/hewwo")
-        }
-    );
-
     INFO(response.url);
     INFO(response.error.message);
     REQUIRE(response.status_code == magpie::Status::OK);
     REQUIRE(response.text == "Server got hewwo");
     REQUIRE(response.header.at("content-type") == "text/plain");
 }
+

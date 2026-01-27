@@ -38,8 +38,10 @@ struct TestApp {
     }
 
     ~TestApp() {
-        app->shutdown();
-        runner.get();
+        if (runner.valid()) {
+            app->shutdown();
+            runner.get();
+        }
     }
 
     std::string baseUrl() {
@@ -84,6 +86,8 @@ struct TestApp {
         cpr::priv::set_option(session, std::forward<Ts>(ts)...);
         return session.Get();
     }
+
+    operator bool() const { return this->runner.valid(); }
 
     /**
      * Utility wrapper around cpr that sets default SSL, ALPN, and HTTP version options.
