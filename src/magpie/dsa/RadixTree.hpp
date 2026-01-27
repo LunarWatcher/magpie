@@ -1,10 +1,9 @@
 #pragma once
 
 #include "magpie/application/Methods.hpp"
-#include "magpie/routing/BaseRoute.hpp"
 #include "magpie/routing/Compile.hpp"
-#include <deque>
-#include <optional>
+
+#include <variant>
 #include <vector>
 #include <memory>
 #include <string_view>
