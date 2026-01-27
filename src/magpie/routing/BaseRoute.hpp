@@ -8,18 +8,18 @@
 
 namespace magpie::routing {
 
-
 template <FixedString path, data::IsCommonData ContextType>
-using RouteCallback = FunctionSignature<path, Response, ContextType*, Request&>::type;
+using RouteCallback = FunctionSignature<path, void, ContextType*, Request&, Response&>::type;
 
 template <data::IsCommonData ContextType>
 struct BaseRoute {
     virtual ~BaseRoute() = default;
 
-    virtual Response invoke(
+    virtual void invoke(
         const std::vector<std::string_view>& requestedRoute,
         ContextType* context,
-        Request& req
+        Request& req,
+        Response& res
     ) = 0;
 };
 

@@ -3,76 +3,15 @@
 #include "magpie/data/CommonData.hpp"
 #include "magpie/dsa/RadixTree.hpp"
 #include "magpie/except/RouteException.hpp"
+#include "magpie/routing/BaseRouter.hpp"
 #include "magpie/routing/Compile.hpp"
 #include "magpie/routing/BaseRoute.hpp"
+#include "magpie/routing/Route.hpp"
 #include "magpie/transfer/Request.hpp"
 #include "magpie/transfer/Response.hpp"
 #include "magpie/transfer/StatusCode.hpp"
-#include <tuple>
-#include <iostream>
 
 namespace magpie::routing {
-
-template <FixedString path, data::IsCommonData ContextType>
-struct Route : public BaseRoute<ContextType> {
-    RouteCallback<path, ContextType> callback;
-    constexpr static size_t Size = guessParams<path>();
-    constexpr static inline auto typeTuples = getForwardableIndices<path>();
-
-    Route(
-        const RouteCallback<path, ContextType>& callback
-    ) : callback(callback) {
-
-    }
-
-    template <std::size_t... I>
-    constexpr auto typeToFuncArgs(const std::vector<std::string_view>& requestedPath, std::index_sequence<I...>) {
-        return std::tuple {
-            TypeInfo<
-                FixedString<typeTuples.at(I).first.size - 1>(typeTuples.at(I).first)
-                // "{string}"
-            >::convert(
-                requestedPath.at(
-                    std::get<1>(typeTuples.at(I))
-                )
-            )...
-        };
-    }
-
-    virtual Response invoke(
-        const std::vector<std::string_view>& requestedPath,
-        ContextType* context,
-        Request& req
-    ) override {
-        if constexpr (Size == 0) {
-            return callback(context, req);
-        } else {
-            return std::apply(
-                [&](auto&&... converted) {
-                    return callback(
-                        context,
-                        req,
-                        std::forward<decltype(converted)>(converted)...
-                    );
-                },
-                typeToFuncArgs(
-                    requestedPath,
-                    std::make_index_sequence<typeTuples.size()>{}
-                )
-            );
-        }
-    }
-
-};
-
-class BaseRouter {
-public:
-    virtual ~BaseRouter() = default;
-    virtual Response invokeRoute(
-        const std::string& path,
-        Request& req
-    ) const = 0;
-};
 
 template <data::IsCommonData ContextType>
 class Router : public BaseRouter {
@@ -128,9 +67,10 @@ public:
         return out;
     }
 
-    Response invokeRoute(
+    void invokeRoute(
         const std::string& path,
-        Request& req
+        Request& req,
+        Response& res
     ) const override {
         // Compact
         
@@ -149,14 +89,15 @@ public:
 
         if (callback) {
             auto& ptr = *callback;
-            return ptr->invoke(
+            ptr->invoke(
                 segments,
                 nullptr,
-                req
+                req,
+                res
             );
         } else {
             // 404
-            return Response(
+            res = Response(
                 Status::NOT_FOUND,
                 "404 not found"
             );

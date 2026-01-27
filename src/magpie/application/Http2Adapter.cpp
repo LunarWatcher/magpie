@@ -21,7 +21,8 @@ Http2Adapter::Http2Adapter(transport::BaseConnection* conn) :
     if (auto result = nghttp2_session_callbacks_new(
         &callbacks
     ); result != 0) {
-        std::cerr << "Failed to create callback object: " << result << std::endl;
+        logger::error("Failed to create callback object: {}", result);
+        throw std::runtime_error("Critical: callback object creation failed");
     }
     nghttp2_session_callbacks_set_send_callback2(
         callbacks,
@@ -51,7 +52,7 @@ Http2Adapter::Http2Adapter(transport::BaseConnection* conn) :
         callbacks,
         &data
     ); result != 0) {
-        std::cerr << "Failed to create session: " << result << std::endl;
+        logger::error("Failed to create session: {}", result);
         throw std::runtime_error("Session init error");
     }
 
@@ -150,9 +151,13 @@ int _detail::onFrame(
             throw std::runtime_error("Critical developer error");
         }
         const auto& router = app->getRouter();
-        auto& request = ud.requests[streamId];
+        auto& request = ud.requests.at(streamId);
+        auto& response = ud.responses.at(streamId);
         if (request == nullptr) {
-            logger::error("Failure: request is nullptr");
+            logger::critical("Failure: request is nullptr");
+            return NGHTTP2_ERR_CALLBACK_FAILURE;
+        } else if (response == nullptr) {
+            logger::critical("Failure: response is nullptr");
             return NGHTTP2_ERR_CALLBACK_FAILURE;
         }
         auto& headers = request->headers;
@@ -160,22 +165,31 @@ int _detail::onFrame(
 
         // This is where we'd feed in data to build a response. nghttp2_data_provider should probably take a Response
         // object as its data source.
-        Response res = router.invokeRoute(destination, *request);
+        router.invokeRoute(destination, *request, *response);
 
-        for (auto& [header, value] : res.headers) {
+        for (auto& [header, value] : response->headers) {
             nva.push_back(makeNv(header, value));
+        }
+
+        if (response->code == nullptr) {
+            [[unlikely]]
+            logger::critical(
+                "res.code is nullptr. There's physically no way for this to happen unless you've done something "
+                "deeply fucking cursed that you should undo right now."
+            );
+            abort();
         }
 
         // Kinda disappointed HTTP/2 doesn't support status messages, but whatever
         // It really doesn't make sense to from any objective POV, but it's just such a nice way to fuck around in
         // certain cases.
-        std::string statusCode = std::to_string(res.code.statusCode);
+        std::string statusCode = std::to_string(response->code->statusCode);
 
         nva.push_back(makeNv(HTTP2_STATUS_HEADER, statusCode));
-        nva.push_back(makeNv(CONTENT_TYPE_HEADER, res.contentType));
+        nva.push_back(makeNv(CONTENT_TYPE_HEADER, response->contentType));
 
         nghttp2_data_provider2 dp;
-        dp.source.ptr = &res;
+        dp.source.ptr = response.get();
         dp.read_callback = [](
             nghttp2_session *,
             int32_t,
@@ -219,10 +233,14 @@ int _detail::onHeaders(
 ) {
     auto& ud = *static_cast<UserData*>(userData);
     auto& request = ud.requests[frame->hd.stream_id];
+    auto& response = ud.responses[frame->hd.stream_id];
 
     // Headers are always sent first, so if the pointer is null, it'll be here
     if (request == nullptr) {
         request = std::make_shared<Request>();
+    }
+    if (response == nullptr) {
+        response = std::make_shared<Response>();
     }
     if (
         frame->hd.type == NGHTTP2_HEADERS
@@ -277,9 +295,17 @@ int _detail::onStreamClose(
     void *userData
 ) {
     auto& ud = *static_cast<UserData*>(userData);
-    auto it = ud.requests.find(streamId);
-    if (it != ud.requests.end()) {
-        ud.requests.erase(it);
+    {
+        auto it = ud.requests.find(streamId);
+        if (it != ud.requests.end()) {
+            ud.requests.erase(it);
+        }
+    }
+    {
+        auto it = ud.responses.find(streamId);
+        if (it != ud.responses.end()) {
+            ud.responses.erase(it);
+        }
     }
     return 0;
 }

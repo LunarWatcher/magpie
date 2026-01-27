@@ -9,6 +9,10 @@ struct StatusCode {
     unsigned short statusCode;
     std::string_view statusLine;
 
+    /**
+     * \param statusCode    The HTTP status code
+     * \param statusLine    The HTTP status line. Only matters for HTTP/1.1, as HTTP/2 and newer do not use this field.
+     */
     constexpr StatusCode(
         unsigned short statusCode,
         std::string_view statusLine

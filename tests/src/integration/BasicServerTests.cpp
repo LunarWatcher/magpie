@@ -9,11 +9,11 @@
 TEST_CASE("Test plain routing", "[integration]") {
     TestApp app;
 
-    app->route<"/">([](auto*, auto&) {
-        return magpie::Response(
+    app->route<"/">([](auto*, auto&, auto& res) {
+        res = {
             magpie::Status::IM_A_TEAPOT,
             "Good girl :3"
-        );
+        };
     });
 
     app.start();
@@ -36,8 +36,8 @@ TEST_CASE("Test plain routing", "[integration]") {
 TEST_CASE("Test argument routing", "[integration]") {
     TestApp app;
 
-    app->route<"/{string}">([](auto*, magpie::Request&, const std::string_view& v) {
-        return magpie::Response(
+    app->route<"/{string}">([](auto*, magpie::Request&, magpie::Response& res, const std::string_view& v) {
+        res = magpie::Response(
             magpie::Status::OK,
             std::format("Server got {}", v)
         );
