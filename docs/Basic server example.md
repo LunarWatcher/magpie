@@ -15,6 +15,8 @@ You can put anything you want in this struct, but note that it's shared across a
 
 This context object can be used to keep track of session stores, database threadpools, or whatever other global state you have. It's provided to all endpoints and middlewares.
 
+## A basic server
+
 ```cpp
 int main() {
     // If you don't create and pass the `ctx`, one will be created for you if the Context object
@@ -38,14 +40,18 @@ int main() {
         },
     };
 
-    app.route<"/">([](Context*, magpie::Request&, magpie::Response& res) {
+    // In the simplest setup, you can just use lambdas. However, the use of a userdata-like
+    // object means that if you use namespaces for structuring and use proper functions, 
+    // you don't need to `std::bind` it just to get in extra data. Class methods still need
+    // to be bound due to the hidden `this` argument, though.
+    app.route<"/", magpie::Method::GET>([](Context*, magpie::Request&, magpie::Response& res) {
         res = magpie::Response(
             magpie::Status::OK, "Content"
         );
     });
 
     // Routes support templates; these are documented elsewhere.
-    app.route<"/{string}">([](auto*, auto&, auto& res, const std::string_view& v) {
+    app.route<"/{string}", magpie::Method::GET>([](auto*, auto&, auto& res, const std::string_view& v) {
         // You don't have to use `res = magpie::Response(...)`; you can also compose the object
         res.code = &magpie::Status::IM_A_TEAPOT;
         res.body = std::format("Hello, {}", v);
