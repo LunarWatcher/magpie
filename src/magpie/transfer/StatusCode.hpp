@@ -23,8 +23,19 @@ struct StatusCode {
     StatusCode(StatusCode&) = delete;
     StatusCode(StatusCode&&) = delete;
 
-    bool operator==(const StatusCode& other) {
+    operator int() const { return statusCode; }
+
+    bool operator==(const StatusCode& other) const {
         return statusCode == other.statusCode;
+    }
+
+    bool operator==(unsigned short code) const {
+        return statusCode == code;
+    }
+
+    // required by catch2 when operator int() exists for whatever reason
+    bool operator==(long int code) const {
+        return statusCode == (unsigned short) code;
     }
 };
 

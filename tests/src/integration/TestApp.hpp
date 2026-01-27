@@ -93,7 +93,7 @@ struct TestApp {
     cpr::Response Post(Ts&&... ts) {
         cpr::Session session;
         injectDefault(session);
-        cpr::priv::set_option(session, CPR_FWD(ts)...);
+        cpr::priv::set_option(session, std::forward<Ts>(ts)...);
         return session.Post();
     }
 };

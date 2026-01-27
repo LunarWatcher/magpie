@@ -1,5 +1,6 @@
 #pragma once
 
+#include "magpie/application/Methods.hpp"
 #include <string>
 #include <unordered_map>
 namespace magpie {
@@ -12,7 +13,7 @@ struct Request {
     // TODO: not sure how requests should deal with streamed input, largely because there's no way to signal which to
     // use in the current setup
     std::string body;
-    std::string method;
+    Method::HttpMethod method;
 };
 
 }

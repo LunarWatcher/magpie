@@ -21,22 +21,27 @@ int main() {
         },
     };
 
-    app.route<"/">([](Context*, magpie::Request&, magpie::Response& res) {
+    app.route<"/", magpie::Method::GET>([](Context*, magpie::Request&, magpie::Response& res) {
         res = magpie::Response(
             magpie::Status::OK, "Good girl :3"
         );
     });
 
-    app.route<"/{string}">([](Context*, magpie::Request&, auto& res, const std::string_view& v) {
+    app.route<"/{string}", magpie::Method::GET>([](Context*, magpie::Request&, auto& res, const std::string_view& v) {
         res = magpie::Response(
             magpie::Status::IM_A_TEAPOT, std::format(
                 "Where is your god now, {}?", v
             )
         );
     });
-    // app.route<"/test/{string}">([](Context*, const std::string_view& v) {
-    //     std::cout << "Subroute: " << v << std::endl;
-    // });
-
+    app.route<"/{int}", magpie::Method::GET>([](Context*, magpie::Request&, auto& res, int64_t v) {
+        if (v == 69) {
+            res.body = "Nice";
+        } else {
+            res.body = std::move(
+                std::format("Your lucky number is {}", v)
+            );
+        }
+    });
     app.run();
 }

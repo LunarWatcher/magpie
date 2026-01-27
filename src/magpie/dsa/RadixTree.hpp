@@ -1,5 +1,6 @@
 #pragma once
 
+#include "magpie/application/Methods.hpp"
 #include "magpie/routing/BaseRoute.hpp"
 #include "magpie/routing/Compile.hpp"
 #include <deque>
@@ -20,7 +21,7 @@ enum class MatchMode {
 
 template <typename Value>
 struct Node {
-    std::optional<Value> value;
+    std::unordered_map<Method::HttpMethod, Value> value;
     int weight;
 
     std::vector<std::shared_ptr<Node<Value>>> childNodes;
@@ -97,6 +98,10 @@ struct TemplateNode : public Node<Value> {
     }
 };
 
+enum class FindError {
+    NO_MATCH,
+    ILLEGAL_METHOD
+};
 
 // This isn't a radix tree right now, but that's the plan, and that's good enough for now
 template <typename Value>
@@ -109,7 +114,7 @@ public:
 
     }
 
-    std::optional<Value> getRoute(const std::vector<std::string_view>& route) const {
+    std::variant<FindError, Value> getRoute(const std::vector<std::string_view>& route, Method::HttpMethod method) const {
         std::shared_ptr<Node<Value>> node = root;
 
         for (auto& segment : route) {
@@ -121,18 +126,26 @@ public:
                     hasMatch = true;
                     break;
                 } else if (matchType == MatchMode::CATCHALL) {
-                    return childNode->value;
+                    throw std::runtime_error("Not implemented");
                 }
             }
 
             if (!hasMatch) {
-                return std::nullopt;
+                return FindError::NO_MATCH;
             }
         }
-        return node->value;
+        auto it = node->value.find(method);
+        if (it == node->value.end()) {
+            return FindError::ILLEGAL_METHOD;
+        }
+        return it->second;
     }
 
-    constexpr void pushRoute(const Value& value, const std::vector<std::string_view>& route) {
+    constexpr void pushRoute(
+        const Value& value,
+        Method::HttpMethod method,
+        const std::vector<std::string_view>& route
+    ) {
         std::shared_ptr<Node<Value>> node = root;
 
         for (auto& segment : route) {
@@ -178,10 +191,11 @@ public:
                 node = newNode;
             }
         }
-        if (node->value.has_value()) {
-            throw std::runtime_error("Duplicate route declared");
+        if (node->value.contains(method)) {
+            [[unlikely]]
+            throw std::runtime_error("Illegal multiple use of the same route with the same method");
         }
-        node->value = value;
+        node->value[method] = value;
     }
 };
 

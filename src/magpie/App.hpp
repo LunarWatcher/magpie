@@ -1,5 +1,6 @@
 #pragma once
 
+#include "magpie/application/Methods.hpp"
 #include "magpie/config/AppConfig.hpp"
 #include "magpie/data/CommonData.hpp"
 #include "magpie/routing/Compile.hpp"
@@ -40,7 +41,7 @@ public:
         dataStore(dataStore),
         router(std::make_shared<routing::Router<ContextType>>())
     {
-        dataStore->app = this;
+        dataStore->app = (BaseApp*) this;
     }
 
     template <typename = std::enable_if<std::is_trivially_default_constructible_v<ContextType>>>
@@ -52,13 +53,17 @@ public:
     ~App() = default;
 
 
-    template <routing::FixedString path>
+    template <
+        routing::FixedString path,
+        Method::HttpMethod method
+    >
     void route(
         const routing::RouteCallback<path, ContextType>& callback
     ) {
         std::static_pointer_cast<routing::Router<ContextType>>(router)
             ->template registerRoute<path>(
-                callback
+                callback,
+                method
             );
     }
 

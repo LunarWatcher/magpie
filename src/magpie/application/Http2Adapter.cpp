@@ -1,6 +1,7 @@
 #include "Http2Adapter.hpp"
 
 #include <nghttp2/nghttp2.h>
+#include "magpie/application/Methods.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 #include "magpie/transport/Connection.hpp"
 #include "magpie/transport/BaseConnection.hpp"
@@ -251,6 +252,11 @@ int _detail::onHeaders(
         std::string v((const char*) value, valuelen);
 
         request->headers[n] = v;
+
+        if (n == ":method") {
+            // TODO: this doesn't really make sense for error handling, but I don't care for now
+            request->method = Method::_detail::strToMethod.at(v);
+        }
     }
     return 0;
 }

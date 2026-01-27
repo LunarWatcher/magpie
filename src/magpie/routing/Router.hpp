@@ -20,14 +20,15 @@ private:
 public:
     template <FixedString path>
     void registerRoute(
-        const RouteCallback<path, ContextType>& callback
+        const RouteCallback<path, ContextType>& callback,
+        Method::HttpMethod method
     ) {
         std::shared_ptr<BaseRoute<ContextType>> route = std::make_shared<Route<path, ContextType>>(
             callback
         );
         auto splitPath = pathToComponents(path.c_str());
 
-        this->routes.pushRoute(route, splitPath);
+        this->routes.pushRoute(route, method, splitPath);
     }
 
     constexpr void normalisePath(
@@ -85,24 +86,31 @@ public:
         auto segments = this->pathToComponents(normPath);
 
         // TODO: handle query params
-        auto callback = this->routes.getRoute(segments);
+        auto callback = this->routes.getRoute(segments, req.method);
 
-        if (callback) {
-            auto& ptr = *callback;
-            ptr->invoke(
-                segments,
-                nullptr,
-                req,
-                res
-            );
-        } else {
-            // 404
-            res = Response(
-                Status::NOT_FOUND,
-                "404 not found"
-            );
-        }
-        
+        std::visit([&](auto& it) {
+            using T = std::decay_t<decltype(it)>;
+            if constexpr (std::is_same_v<dsa::FindError, T>) {
+                if (it == dsa::FindError::ILLEGAL_METHOD) {
+                    res = Response(
+                        Status::METHOD_NOT_ALLOWED,
+                        "405 method not allowed"
+                    );
+                } else if (it == dsa::FindError::NO_MATCH) {
+                    res = Response(
+                        Status::NOT_FOUND,
+                        "404 not found"
+                    );
+                }
+            } else {
+                it->invoke(
+                    segments,
+                    nullptr,
+                    req,
+                    res
+                );
+            }
+        }, callback);
     }
 };
 

@@ -2,9 +2,9 @@
 
 
 #include <type_traits>
+namespace magpie { class BaseApp; }
 namespace magpie::data {
 
-class BaseApp;
 struct CommonData {
     BaseApp* app;
 
