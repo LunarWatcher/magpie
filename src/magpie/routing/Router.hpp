@@ -11,6 +11,10 @@
 #include "magpie/transfer/Response.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 
+#include <memory>
+#include <string_view>
+#include <variant>
+
 namespace magpie::routing {
 
 template <data::IsCommonData ContextType>
