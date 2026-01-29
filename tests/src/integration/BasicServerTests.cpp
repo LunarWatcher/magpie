@@ -20,12 +20,10 @@ TEST_CASE("Test plain routing", "[integration]") {
     using namespace std::literals;
 
     SECTION("Can access route as intended") {
-        REQUIRE(app.url().starts_with("https://"));
+        REQUIRE(app.url().str().starts_with("https://"));
 
         auto response = app.Get(
-            cpr::Url {
-                app.url()
-            }
+            app.url()
         );
         INFO(response.url);
         INFO(response.error.message);
@@ -36,9 +34,7 @@ TEST_CASE("Test plain routing", "[integration]") {
     }
     SECTION("HTTP methods are respected") {
         auto response = app.Post(
-            cpr::Url {
-                app.url()
-            }
+            app.url()
         );
         REQUIRE(response.status_code == magpie::Status::METHOD_NOT_ALLOWED);
     }
@@ -60,16 +56,12 @@ TEST_CASE("Test argument routing", "[integration]") {
         app.start();
 
         auto wrongMethod = app.Post(
-            cpr::Url {
-                app.url("/hewwo")
-            }
+            app.url("/hewwo")
         );
         REQUIRE(wrongMethod.status_code == magpie::Status::METHOD_NOT_ALLOWED);
 
         response = app.Get(
-            cpr::Url {
-                app.url("/hewwo")
-            }
+            app.url("/hewwo")
         );
     }
 
@@ -84,16 +76,12 @@ TEST_CASE("Test argument routing", "[integration]") {
         app.start();
 
         auto wrongMethod = app.Get(
-            cpr::Url {
-                app.url("/hewwo")
-            }
+            app.url("/hewwo")
         );
         REQUIRE(wrongMethod.status_code == magpie::Status::METHOD_NOT_ALLOWED);
 
         response = app.Post(
-            cpr::Url {
-                app.url("/hewwo")
-            }
+            app.url("/hewwo")
         );
 
     }
@@ -102,7 +90,7 @@ TEST_CASE("Test argument routing", "[integration]") {
         FAIL("Test section failed");
     }
 
-    REQUIRE(app.url().starts_with("https://"));
+    REQUIRE(app.url().str().starts_with("https://"));
     INFO(response.url);
     INFO(response.error.message);
     REQUIRE(response.status_code == magpie::Status::OK);

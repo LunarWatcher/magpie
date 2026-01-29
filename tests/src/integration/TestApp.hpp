@@ -52,7 +52,7 @@ struct TestApp {
         );
     }
 
-    std::string url(const std::string& route = "") {
+    cpr::Url url(const std::string& route = "") {
         if (route.size() != 0 && route[0] != '/') {
             throw std::runtime_error("Programmer error: route must start with / (or be empty)");
         }
