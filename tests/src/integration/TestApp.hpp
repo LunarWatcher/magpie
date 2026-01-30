@@ -34,7 +34,6 @@ struct TestApp {
     void start() {
         using namespace std::literals;
         runner = std::async([&]() { this->app->run(); });
-        std::this_thread::sleep_for(1s);
     }
 
     ~TestApp() {

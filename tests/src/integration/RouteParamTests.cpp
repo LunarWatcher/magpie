@@ -67,6 +67,23 @@ TEST_CASE("Test type capturing") {
         REQUIRE(res.text == "string");
     }
 
+    /**
+     * This is a regression test for a bug where an off-by-one error that was correct at the time of writing was missed
+     * when `/` was moved to its own, dedicated path segment. A -1 meant to remove a / from the segment caused two
+     * separate bugs:
+     * 1. With the old setup, a trailing {int} would not necessarily have a slash at the end, so the -1 could 
+     *    cause incorrect validation.
+     * 2. With the new setup, a trailing non-int character could be smuggled past the initial validation filter. 
+     *    This is not in any way severe, but would just cause somewhat unexpected routing behaviour under certain
+     *    edge-cases, and likely a HTTP 500 instead of a HTTP 404.
+     */
+    SECTION("Semi-valid ints with one invalid character should be rerouted to string") {
+        auto res = app.Get(app.url("/multi/621a"));
+        INFO(res.error.message);
+        REQUIRE(res.status_code == 200);
+        REQUIRE(res.text == "string");
+    }
+
     SECTION("Negative numbers should be legal") {
         auto res = app.Get(app.url("/int/-69"));
         INFO(res.error.message);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magpie/application/Methods.hpp"
+#include "magpie/logger/Logger.hpp"
 #include "magpie/routing/Compile.hpp"
 
 #include <variant>
@@ -74,7 +75,7 @@ struct TemplateNode : public Node<Value> {
         if constexpr (std::is_same_v<NodeType, std::string_view>) {
             return MatchMode::SingleSegment;
         } else if constexpr (std::is_same_v<NodeType, int64_t>) {
-            for (size_t i = 0; i < segment.size() - 1; ++i) {
+            for (size_t i = 0; i < segment.size(); ++i) {
                 auto c = segment.at(i);
                 if ((c < '0' || c > '9') && c != '+' && c != '-') {
                     return MatchMode::NoMatch;
@@ -98,7 +99,15 @@ struct TemplateNode : public Node<Value> {
 };
 
 enum class FindError {
+    /**
+     * Indicates that the tree failed to find a route. When returned, this means a 404 should be returned to the end
+     * user.
+     */
     NoMatch,
+    /**
+     * Indicates that the route does exist, but that the supplied HttpMethod isn't matched by any handlers. When
+     * returned, this means a 405 should be returned to the end-user
+     */
     IllegalMethod
 };
 
@@ -113,6 +122,12 @@ public:
 
     }
 
+    /**
+     * Takes an input route and method and identifies the associated handler (the Value type). 
+     * 
+     * \returns either a Value, meaning the underlying route type, or a FindError. See FindError for a description of
+     *          its possible values.
+     */
     std::variant<FindError, Value> getRoute(const std::vector<std::string_view>& route, Method::HttpMethod method) const {
         std::shared_ptr<Node<Value>> node = root;
 
@@ -150,6 +165,8 @@ public:
         for (auto& segment : route) {
             bool hasRoute = false;
             // This search is shit, but this code is complex and I want somewhere to start
+            //
+            // This checks if we have an existing node that matches the segment
             for (auto& childNode : node->childNodes) {
                 if (*childNode == segment) {
                     node = childNode;
@@ -158,6 +175,8 @@ public:
                 }
             }
 
+            // If we don't have an existing node, we push a new one. This is necessary for all the intermediates to be
+            // populated.
             if (!hasRoute) {
                 std::shared_ptr<Node<Value>> newNode;
 
@@ -190,6 +209,8 @@ public:
                 node = newNode;
             }
         }
+        // It would be nice if this could be caught at compile time, but not sure how many more constexpr data objects
+        // that would require
         if (node->value.contains(method)) {
             [[unlikely]]
             throw std::runtime_error("Illegal multiple use of the same route with the same method");
