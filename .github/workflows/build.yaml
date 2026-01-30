@@ -32,6 +32,7 @@ jobs:
           make -j $(nproc) test
       - name: Show test coverage
         run: |
+          cd build
           make -j $(nproc) gen-coverage
   test-windows:
     runs-on: windows-latest
