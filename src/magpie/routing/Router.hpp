@@ -95,12 +95,12 @@ public:
         std::visit([&](auto& it) {
             using T = std::decay_t<decltype(it)>;
             if constexpr (std::is_same_v<dsa::FindError, T>) {
-                if (it == dsa::FindError::ILLEGAL_METHOD) {
+                if (it == dsa::FindError::IllegalMethod) {
                     res = Response(
                         Status::METHOD_NOT_ALLOWED,
                         "405 method not allowed"
                     );
-                } else if (it == dsa::FindError::NO_MATCH) {
+                } else if (it == dsa::FindError::NoMatch) {
                     res = Response(
                         Status::NOT_FOUND,
                         "404 not found"

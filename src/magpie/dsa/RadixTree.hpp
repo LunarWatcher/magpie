@@ -12,10 +12,10 @@
 namespace magpie::dsa {
 
 enum class MatchMode {
-    NO_MATCH,
-    SINGLE_SEGMENT,
+    NoMatch,
+    SingleSegment,
     // Currently unused, reserved for future {path} placeholder
-    CATCHALL
+    CatchAll
 };
 
 template <typename Value>
@@ -35,7 +35,7 @@ template <typename Value>
 struct RootNode : public Node<Value> {
     // this is unused, but needs to be overridden so we can exploit Node::otherNodes as standardised storage. Right now,
     // it's just a vector, but if a supportive 
-    MatchMode match(const std::string_view&) override { return MatchMode::SINGLE_SEGMENT; }
+    MatchMode match(const std::string_view&) override { return MatchMode::SingleSegment; }
     constexpr virtual bool operator==(const std::string_view&) override { return true; }
 };
 
@@ -47,7 +47,7 @@ struct StandardNode : public Node<Value> {
     }
 
     MatchMode match(const std::string_view& segment) override {
-        return segment == this->segment ? MatchMode::SINGLE_SEGMENT : MatchMode::NO_MATCH;
+        return segment == this->segment ? MatchMode::SingleSegment : MatchMode::NoMatch;
     }
     constexpr virtual bool operator==(const std::string_view& pathSegment) override { 
         return pathSegment == this->segment;
@@ -72,15 +72,15 @@ struct TemplateNode : public Node<Value> {
         // - No major parsing should be done here; if complex parsing is required to determine if a segment matches, it
         //   probably isn't a placeholder we want to support
         if constexpr (std::is_same_v<NodeType, std::string_view>) {
-            return MatchMode::SINGLE_SEGMENT;
+            return MatchMode::SingleSegment;
         } else if constexpr (std::is_same_v<NodeType, int64_t>) {
             for (size_t i = 0; i < segment.size() - 1; ++i) {
                 auto c = segment.at(i);
                 if ((c < '0' || c > '9') && c != '+' && c != '-') {
-                    return MatchMode::NO_MATCH;
+                    return MatchMode::NoMatch;
                 }
             }
-            return MatchMode::SINGLE_SEGMENT;
+            return MatchMode::SingleSegment;
         } else {
             static_assert(false, "Invalid type");
         }
@@ -98,8 +98,8 @@ struct TemplateNode : public Node<Value> {
 };
 
 enum class FindError {
-    NO_MATCH,
-    ILLEGAL_METHOD
+    NoMatch,
+    IllegalMethod
 };
 
 // This isn't a radix tree right now, but that's the plan, and that's good enough for now
@@ -120,22 +120,22 @@ public:
             bool hasMatch = false;
             for (auto& childNode : node->childNodes) {
                 auto matchType = childNode->match(segment);
-                if (matchType == MatchMode::SINGLE_SEGMENT) {
+                if (matchType == MatchMode::SingleSegment) {
                     node = childNode;
                     hasMatch = true;
                     break;
-                } else if (matchType == MatchMode::CATCHALL) {
+                } else if (matchType == MatchMode::CatchAll) {
                     throw std::runtime_error("Not implemented");
                 }
             }
 
             if (!hasMatch) {
-                return FindError::NO_MATCH;
+                return FindError::NoMatch;
             }
         }
         auto it = node->value.find(method);
         if (it == node->value.end()) {
-            return FindError::ILLEGAL_METHOD;
+            return FindError::IllegalMethod;
         }
         return it->second;
     }

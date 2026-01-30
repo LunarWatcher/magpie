@@ -34,23 +34,24 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     option(MAGPIE_ENABLE_DEMOS "Whether or not to build demos" ON)
     option(MAGPIE_BUILD_TESTS "Whether or not to build tests" ON)
-    option(MAGPIE_DOCS "Whether or not to build doxygen docs" OFF)
-    option(MAGPIE_SANITISE "Whether or not to -fsanitise=undefined" OFF)
 else()
     message (STATUS "alui: Running as a submodule")
     set(MAGPIE_STANDALONE OFF)
 
     option(MAGPIE_ENABLE_DEMOS "Whether or not to build demos" OFF)
     option(MAGPIE_BUILD_TESTS "Whether or not to build tests" OFF)
-    option(MAGPIE_DOCS "Whether or not to build doxygen docs" OFF)
-    option(MAGPIE_SANITISE "Whether or not to -fsanitise=undefined" OFF)
 endif()
+
+option(MAGPIE_COVERAGE "Whether or not to build with test coverage" OFF)
+option(MAGPIE_DOCS "Whether or not to build doxygen docs" OFF)
+option(MAGPIE_SANITISE "Whether or not to -fsanitise=undefined" OFF)
 
 message(STATUS "Magpie build configuration:")
 message(STATUS "\t- Demos: ${MAGPIE_ENABLE_DEMOS}")
 message(STATUS "\t- Tests: ${MAGPIE_BUILD_TESTS}")
 message(STATUS "\t- Docs: ${MAGPIE_DOCS}")
 message(STATUS "\t- Sanitising: ${MAGPIE_SANITISE}")
+message(STATUS "\t- Coverage: ${MAGPIE_COVERAGE}")
 
 # Used for crypto, and maybe HTTPS eventually:tm:
 find_package(OpenSSL REQUIRED)
@@ -58,6 +59,22 @@ find_package(libnghttp2 REQUIRED)
 find_package(asio REQUIRED)
 
 add_definitions(-DASIO_NO_DEPRECATED=true -DNGHTTP2_NO_SSIZE_T=true)
+
+# TODO: not sure how useful this actually is. Looks like the tooling struggles with multithreaded tests
+if (MAGPIE_COVERAGE)
+    string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)" CMAKE_CXX_COMPILER_VERSION_REGEX_MATCH  ${CMAKE_CXX_COMPILER_VERSION})
+    set(COMPILER_MAJOR ${CMAKE_MATCH_1})
+    find_program(GCOV NAMES gcov-${COMPILER_MAJOR} gcov REQUIRED)
+    find_program(LCOV lcov REQUIRED)
+    find_program(GENHTML genhtml REQUIRED)
+
+    add_compile_options(-fprofile-arcs -ftest-coverage)
+    add_link_options(--coverage)
+    add_custom_target(gen-coverage
+        COMMAND ${LCOV} --capture --output coverage.info --include "${CMAKE_SOURCE_DIR}/src/\\*" --exclude "${CMAKE_BINARY_DIR}/_deps/\\*" --directory . --gcov-tool ${GCOV} --ignore-errors inconsistent,gcov
+        COMMAND ${GENHTML} coverage.info --output coverage-html --ignore-errors inconsistent
+    )
+endif()
 
 add_subdirectory(src)
 
