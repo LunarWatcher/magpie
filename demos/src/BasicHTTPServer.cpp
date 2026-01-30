@@ -21,20 +21,20 @@ int main() {
         },
     };
 
-    app.route<"/", magpie::Method::GET>([](Context*, magpie::Request&, magpie::Response& res) {
+    app.route<"/", magpie::Method::Get>([](Context*, magpie::Request&, magpie::Response& res) {
         res = magpie::Response(
             magpie::Status::OK, "Good girl :3"
         );
     });
 
-    app.route<"/{string}", magpie::Method::GET>([](Context*, magpie::Request&, auto& res, const std::string_view& v) {
+    app.route<"/{string}", magpie::Method::Get>([](Context*, magpie::Request&, auto& res, const std::string_view& v) {
         res = magpie::Response(
             magpie::Status::IM_A_TEAPOT, std::format(
                 "Where is your god now, {}?", v
             )
         );
     });
-    app.route<"/{int}", magpie::Method::GET>([](Context*, magpie::Request&, auto& res, int64_t v) {
+    app.route<"/{int}", magpie::Method::Get>([](Context*, magpie::Request&, auto& res, int64_t v) {
         if (v == 69) {
             res.body = "Nice";
         } else {

@@ -9,7 +9,7 @@
 TEST_CASE("Test plain routing", "[integration]") {
     TestApp app;
 
-    app->route<"/", magpie::Method::GET>([](auto*, auto&, auto& res) {
+    app->route<"/", magpie::Method::Get>([](auto*, auto&, auto& res) {
         res = {
             magpie::Status::IM_A_TEAPOT,
             "Good girl :3"
@@ -46,7 +46,7 @@ TEST_CASE("Test argument routing", "[integration]") {
 
     cpr::Response response;
     SECTION("GET") {
-        app->route<"/{string}", magpie::Method::GET>([](auto*, magpie::Request&, magpie::Response& res, const std::string_view& v) {
+        app->route<"/{string}", magpie::Method::Get>([](auto*, magpie::Request&, magpie::Response& res, const std::string_view& v) {
             res = magpie::Response(
                 magpie::Status::OK,
                 std::format("Server got {}", v)
@@ -66,7 +66,7 @@ TEST_CASE("Test argument routing", "[integration]") {
     }
 
     SECTION("POST") {
-        app->route<"/{string}", magpie::Method::POST>([](auto*, magpie::Request&, magpie::Response& res, const std::string_view& v) {
+        app->route<"/{string}", magpie::Method::Post>([](auto*, magpie::Request&, magpie::Response& res, const std::string_view& v) {
             res = magpie::Response(
                 magpie::Status::OK,
                 std::format("Server got {}", v)
