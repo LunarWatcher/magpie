@@ -40,6 +40,34 @@ TEST_CASE("Test plain routing", "[integration]") {
     }
 }
 
+TEST_CASE("Test plain routing without SSL", "[integration]") {
+    TestApp app{{}, false};
+
+    app->route<"/", magpie::Method::Get>([](auto*, auto&, auto& res) {
+        res = {
+            magpie::Status::IM_A_TEAPOT,
+            "Good girl :3"
+        };
+    });
+
+    app.start();
+    using namespace std::literals;
+
+    SECTION("Can access route as intended") {
+        REQUIRE(app.url().str().starts_with("http://"));
+
+        auto response = app.Get(
+            app.url()
+        );
+        INFO(response.url);
+        INFO(response.error.message);
+        REQUIRE(response.status_code == magpie::Status::IM_A_TEAPOT);
+        REQUIRE(response.text == "Good girl :3");
+        REQUIRE(response.header.at("content-type") == "text/plain");
+
+    }
+}
+
 TEST_CASE("Test argument routing", "[integration]") {
     using namespace std::literals;
     TestApp app;

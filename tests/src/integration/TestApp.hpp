@@ -16,15 +16,18 @@ struct TestApp {
 
     std::future<void> runner;
     TestApp(
-        magpie::AppConfig&& config = {}
+        magpie::AppConfig&& config = {},
+        bool autoSsl = true
     ) {
         // Used to make the logs somewhat clearer. This should also be made better by me actually getting around to
         // writing a test reporter that isn't shit
         std::cout << "-------------------- BEGIN NEW TEST --------------------" << std::endl;
         config.port = 0;
-        config.ssl = std::optional(
-            magpie::SSLConfig::fromGeneratedCertificate()
-        );
+        if (autoSsl) {
+            config.ssl = std::optional(
+                magpie::SSLConfig::fromGeneratedCertificate()
+            );
+        }
         app = std::make_shared<magpie::App<>>(
             std::move(config)
         );
@@ -63,12 +66,20 @@ struct TestApp {
     }
 
     void injectDefault(cpr::Session& sess) {
-        sess.SetVerifySsl(false);
-        sess.SetHttpVersion(
-            cpr::HttpVersion {
-                cpr::HttpVersionCode::VERSION_2_0
-            }
-        );
+        if (this->isSsl) {
+            sess.SetVerifySsl(false);
+            sess.SetHttpVersion(
+                cpr::HttpVersion {
+                    cpr::HttpVersionCode::VERSION_2_0
+                }
+            );
+        } else {
+            sess.SetHttpVersion(
+                cpr::HttpVersion {
+                    cpr::HttpVersionCode::VERSION_2_0_PRIOR_KNOWLEDGE
+                }
+            );
+        }
         sess.SetTimeout(cpr::Timeout {
             std::chrono::seconds(10)
         });
