@@ -3,13 +3,15 @@
 #include "magpie/App.hpp"
 #include "magpie/config/AppConfig.hpp"
 #include "magpie/config/SSLConfig.hpp"
+#include "magpie/data/CommonData.hpp"
 #include <cpr/cpr.h>
 #include <future>
 #include <iostream>
 
+template <magpie::data::IsCommonData CtxType = magpie::data::CommonData>
 struct TestApp {
     std::shared_ptr<
-        magpie::App<>
+        magpie::App<CtxType>
     > app;
 
     bool isSsl;
@@ -28,7 +30,7 @@ struct TestApp {
                 magpie::SSLConfig::fromGeneratedCertificate()
             );
         }
-        app = std::make_shared<magpie::App<>>(
+        app = std::make_shared<magpie::App<CtxType>>(
             std::move(config)
         );
 
@@ -61,7 +63,7 @@ struct TestApp {
         return baseUrl() + route;
     }
 
-    magpie::App<>* operator->() {
+    magpie::App<CtxType>* operator->() {
         return app.get();
     }
 

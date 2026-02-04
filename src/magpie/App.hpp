@@ -20,6 +20,7 @@ public:
 
     virtual const routing::BaseRouter& getRouter() = 0;
 
+    virtual data::CommonData* getContext() const = 0;
     const AppConfig& getConfig() { return config; }
 };
 
@@ -91,6 +92,10 @@ public:
 
     const routing::BaseRouter& getRouter() override {
         return *this->router;
+    }
+
+    data::CommonData* getContext() const override {
+        return this->dataStore.get();
     }
 
 };

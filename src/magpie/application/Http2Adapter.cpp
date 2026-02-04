@@ -166,7 +166,12 @@ int _detail::onFrame(
 
         // This is where we'd feed in data to build a response. nghttp2_data_provider should probably take a Response
         // object as its data source.
-        router.invokeRoute(destination, *request, *response);
+        router.invokeRoute(
+            destination,
+            app->getContext(),
+            *request,
+            *response
+        );
 
         for (auto& [header, value] : response->headers) {
             nva.push_back(makeNv(header, value));

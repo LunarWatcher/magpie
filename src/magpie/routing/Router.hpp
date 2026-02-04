@@ -74,6 +74,7 @@ public:
 
     void invokeRoute(
         const std::string& path,
+        data::CommonData* ctx,
         Request& req,
         Response& res
     ) const override {
@@ -109,7 +110,7 @@ public:
             } else {
                 it->invoke(
                     segments,
-                    nullptr,
+                    static_cast<ContextType*>(ctx),
                     req,
                     res
                 );
