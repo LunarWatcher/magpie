@@ -1,8 +1,10 @@
 #pragma once
 
+#include "magpie/AppDecl.hpp"
 #include "magpie/data/CommonData.hpp"
 #include "magpie/dsa/RadixTree.hpp"
 #include "magpie/except/RouteException.hpp"
+#include "magpie/middlewares/MiddlewareProcessor.hpp"
 #include "magpie/routing/BaseRouter.hpp"
 #include "magpie/routing/Compile.hpp"
 #include "magpie/routing/BaseRoute.hpp"
@@ -98,19 +100,26 @@ public:
             if constexpr (std::is_same_v<dsa::FindError, T>) {
                 if (it == dsa::FindError::IllegalMethod) {
                     res = Response(
-                        Status::METHOD_NOT_ALLOWED,
+                        Status::MethodNotAllowed,
                         "405 method not allowed"
                     );
                 } else if (it == dsa::FindError::NoMatch) {
                     res = Response(
-                        Status::NOT_FOUND,
+                        Status::NotFound,
                         "404 not found"
                     );
                 }
             } else {
-                it->invoke(
+
+                auto* castCtx = static_cast<ContextType*>(ctx);
+                MiddlewareProcessor<ContextType>(
+                    it.get(),
+                    std::vector<Middlewares<ContextType>*> {
+                        static_cast<ContextApp<ContextType>*>(castCtx->app)->getMiddlewaresAsPtr()
+                    }
+                ).invokeRoute(
                     segments,
-                    static_cast<ContextType*>(ctx),
+                    castCtx,
                     req,
                     res
                 );

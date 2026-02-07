@@ -11,7 +11,7 @@ TEST_CASE("Test plain routing", "[integration]") {
 
     app->route<"/", magpie::Method::Get>([](auto*, auto&, auto& res) {
         res = {
-            magpie::Status::IM_A_TEAPOT,
+            magpie::Status::ImATeapot,
             "Good girl :3"
         };
     });
@@ -27,7 +27,7 @@ TEST_CASE("Test plain routing", "[integration]") {
         );
         INFO(response.url);
         INFO(response.error.message);
-        REQUIRE(response.status_code == magpie::Status::IM_A_TEAPOT);
+        REQUIRE(response.status_code == magpie::Status::ImATeapot);
         REQUIRE(response.text == "Good girl :3");
         REQUIRE(response.header.at("content-type") == "text/plain");
 
@@ -36,7 +36,7 @@ TEST_CASE("Test plain routing", "[integration]") {
         auto response = app.Post(
             app.url()
         );
-        REQUIRE(response.status_code == magpie::Status::METHOD_NOT_ALLOWED);
+        REQUIRE(response.status_code == magpie::Status::MethodNotAllowed);
     }
 }
 
@@ -45,7 +45,7 @@ TEST_CASE("Test plain routing without SSL", "[integration]") {
 
     app->route<"/", magpie::Method::Get>([](auto*, auto&, auto& res) {
         res = {
-            magpie::Status::IM_A_TEAPOT,
+            magpie::Status::ImATeapot,
             "Good girl :3"
         };
     });
@@ -61,7 +61,7 @@ TEST_CASE("Test plain routing without SSL", "[integration]") {
         );
         INFO(response.url);
         INFO(response.error.message);
-        REQUIRE(response.status_code == magpie::Status::IM_A_TEAPOT);
+        REQUIRE(response.status_code == magpie::Status::ImATeapot);
         REQUIRE(response.text == "Good girl :3");
         REQUIRE(response.header.at("content-type") == "text/plain");
 
@@ -86,7 +86,7 @@ TEST_CASE("Test argument routing", "[integration]") {
         auto wrongMethod = app.Post(
             app.url("/hewwo")
         );
-        REQUIRE(wrongMethod.status_code == magpie::Status::METHOD_NOT_ALLOWED);
+        REQUIRE(wrongMethod.status_code == magpie::Status::MethodNotAllowed);
 
         response = app.Get(
             app.url("/hewwo")
@@ -106,7 +106,7 @@ TEST_CASE("Test argument routing", "[integration]") {
         auto wrongMethod = app.Get(
             app.url("/hewwo")
         );
-        REQUIRE(wrongMethod.status_code == magpie::Status::METHOD_NOT_ALLOWED);
+        REQUIRE(wrongMethod.status_code == magpie::Status::MethodNotAllowed);
 
         response = app.Post(
             app.url("/hewwo")

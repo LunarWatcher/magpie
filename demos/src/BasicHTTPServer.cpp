@@ -29,7 +29,7 @@ int main() {
 
     app.route<"/{string}", magpie::Method::Get>([](Context*, magpie::Request&, auto& res, const std::string_view& v) {
         res = magpie::Response(
-            magpie::Status::IM_A_TEAPOT, std::format(
+            magpie::Status::ImATeapot, std::format(
                 "Where is your god now, {}?", v
             )
         );

@@ -17,13 +17,23 @@ struct TestApp {
     bool isSsl;
 
     std::future<void> runner;
+
+    template <typename = std::enable_if<
+        std::is_trivially_default_constructible_v<CtxType>>
+    >
     TestApp(
+        magpie::AppConfig&& config = {},
+        bool autoSsl = true
+    ) : TestApp<CtxType>(std::make_shared<CtxType>(), std::move(config), autoSsl) {
+    }
+
+    TestApp(
+        std::shared_ptr<CtxType> ctx,
         magpie::AppConfig&& config = {},
         bool autoSsl = true
     ) {
         // Used to make the logs somewhat clearer. This should also be made better by me actually getting around to
         // writing a test reporter that isn't shit
-        std::cout << "-------------------- BEGIN NEW TEST --------------------" << std::endl;
         config.port = 0;
         if (autoSsl) {
             config.ssl = std::optional(
@@ -31,11 +41,13 @@ struct TestApp {
             );
         }
         app = std::make_shared<magpie::App<CtxType>>(
+            ctx,
             std::move(config)
         );
 
         isSsl = config.ssl.has_value();
     }
+
     void start() {
         using namespace std::literals;
         runner = std::async([&]() { this->app->run(); });

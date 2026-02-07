@@ -1,8 +1,10 @@
 #pragma once
 
+#include "magpie/AppDecl.hpp"
 #include "magpie/application/Methods.hpp"
 #include "magpie/config/AppConfig.hpp"
 #include "magpie/data/CommonData.hpp"
+#include "magpie/middlewares/Middleware.hpp"
 #include "magpie/routing/Compile.hpp"
 #include "magpie/routing/Router.hpp"
 #include "magpie/transport/TCPServer.hpp"
@@ -11,36 +13,26 @@
 
 namespace magpie {
 
-class BaseApp {
-protected:
-    const AppConfig config;
-public:
-    BaseApp(AppConfig&& config) : config(std::move(config)) {}
-    ~BaseApp() = default;
-
-    virtual const routing::BaseRouter& getRouter() = 0;
-
-    virtual data::CommonData* getContext() const = 0;
-    const AppConfig& getConfig() { return config; }
-};
-
 template <data::IsCommonData ContextType = data::CommonData>
-class App : public BaseApp {
+class App : public ContextApp<ContextType> {
 private:
     transport::TCPServer serv;
 
     std::shared_ptr<ContextType> dataStore;
     std::shared_ptr<routing::BaseRouter> router;
 
+    std::shared_ptr<Middlewares<ContextType>> middlewares;
+
 public:
 
     App(
         std::shared_ptr<ContextType> dataStore,
         AppConfig&& conf = {}
-    ): BaseApp(std::move(conf)),
+    ): ContextApp<ContextType>(std::move(conf)),
         serv(this, conf.port, conf.concurrency),
         dataStore(dataStore),
-        router(std::make_shared<routing::Router<ContextType>>())
+        router(std::make_shared<routing::Router<ContextType>>()),
+        middlewares(std::make_shared<Middlewares<ContextType>>())
     {
         dataStore->app = (BaseApp*) this;
     }
@@ -96,6 +88,16 @@ public:
 
     data::CommonData* getContext() const override {
         return this->dataStore.get();
+    }
+
+    void registerGlobalMiddlewares(
+        const std::vector<std::shared_ptr<Middleware<ContextType>>>& middlewares
+    ) {
+        this->middlewares->middlewares = middlewares;
+    }
+    
+    Middlewares<ContextType>* getMiddlewaresAsPtr() override {
+        return this->middlewares.get();
     }
 
 };
