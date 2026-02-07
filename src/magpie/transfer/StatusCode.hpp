@@ -73,7 +73,7 @@ namespace Status {
     constexpr StatusCode RangeNotSatisfiable(416, "Range Not Satisfiable");
     constexpr StatusCode ExpectationFailed(417, "Expectation Failed");
     constexpr StatusCode ImATeapot(418, "I'm a teapot");
-    constexpr StatusCode PreconditionREquired(428, "Precondition Required");
+    constexpr StatusCode PreconditionRequired(428, "Precondition Required");
     constexpr StatusCode TooManyRequests(429, "Too Many Requests");
     constexpr StatusCode UnavailableForLegalReasons(451, "Unavailable For Legal Reasons");
 
