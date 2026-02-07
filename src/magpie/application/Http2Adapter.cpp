@@ -152,8 +152,8 @@ int _detail::onFrame(
             throw std::runtime_error("Critical developer error");
         }
         const auto& router = app->getRouter();
-        auto request = ud.requests.at(streamId);
-        auto response = ud.responses.at(streamId);
+        auto& request = ud.requests.at(streamId);
+        auto& response = ud.responses.at(streamId);
         if (request == nullptr) {
             logger::critical("Failure: request is nullptr");
             return NGHTTP2_ERR_CALLBACK_FAILURE;
