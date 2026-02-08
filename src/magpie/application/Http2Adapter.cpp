@@ -3,12 +3,15 @@
 #include <nghttp2/nghttp2.h>
 #include "magpie/application/Methods.hpp"
 #include "magpie/transfer/StatusCode.hpp"
+#include "magpie/transfer/adapters/Adapter.hpp"
 #include "magpie/transport/Connection.hpp"
 #include "magpie/transport/BaseConnection.hpp"
 #include "magpie/App.hpp"
 #include "magpie/utility/ErrorHandler.hpp"
+#include <openssl/comp.h>
 #include <stdexcept>
 #include <string>
+#include <zlib-ng.h>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -121,6 +124,8 @@ int _detail::onFrame(
     // Not sure if these are actually necessary, but they need to be constants anyway.
     static std::string HTTP2_STATUS_HEADER = ":status";
     static std::string CONTENT_TYPE_HEADER = "content-type";
+    static std::string CONTENT_ENCODING = "content-encoding";
+    static std::string GZIP = "gzip";
 
     auto& ud = *static_cast<UserData*>(userData);
     auto* conn = ud.conn;
@@ -201,36 +206,27 @@ int _detail::onFrame(
             abort();
         }
 
+        FixedAdapter sourceData { response->body };
+        CompressionAdapter outputAdapter { &sourceData };
+        nva.push_back(makeNv(CONTENT_ENCODING, GZIP));
+
         nghttp2_data_provider2 dp;
-        dp.source.ptr = response.get();
+        dp.source.ptr = (DataAdapter*) &outputAdapter;
         dp.read_callback = [](
             nghttp2_session*,
-            int32_t streamId,
+            int32_t,
             uint8_t* buf, size_t length,
-            uint32_t* data_flags,
+            uint32_t* dataFlags,
             nghttp2_data_source* src,
-            void* userData
+            void*
         ) -> nghttp2_ssize {
-            auto& ud = *static_cast<UserData*>(userData);
-            auto& offset = ud.writeOffsets[streamId];
+            // auto& ud = *static_cast<UserData*>(userData);
 
-            auto res = (Response*) src->ptr;
+            auto adapter = (DataAdapter*) src->ptr;
             // logger::debug("Length/body length: {}/{}", length, res->body.size());
-            size_t len = std::min(
-                length,
-                res->body.size() - offset
+            return (nghttp2_ssize) adapter->getChunk(
+                length, buf, dataFlags
             );
-            std::memcpy(
-                buf,
-                res->body.c_str() + offset,
-                len
-            );
-            if (len + offset == res->body.size()) {
-                *data_flags = NGHTTP2_DATA_FLAG_EOF;
-            } else {
-                offset += len;
-            }
-            return (nghttp2_ssize) len;
         };
         int rv = nghttp2_submit_response2(
             sess,

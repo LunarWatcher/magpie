@@ -13,8 +13,7 @@ class Magpie(ConanFile):
         # TODO: sync with whatever ubuntu uses
         self.requires("openssl/3.6.0")
         self.requires("asio/1.36.0")
-        # Unused, will be used Later:tm:
-        self.requires("zlib/1.3.1")
+        self.requires("zlib-ng/2.3.3")
 
         self.test_requires(
             "libcurl/8.17.0"

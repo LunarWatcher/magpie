@@ -17,6 +17,7 @@ PUBLIC
     libnghttp2::libnghttp2
     asio::asio
     OpenSSL::SSL
+    zlib-ng::zlib-ng
 )
 
 # vim:ft=cmake

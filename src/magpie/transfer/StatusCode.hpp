@@ -5,6 +5,23 @@
 
 namespace magpie {
 
+/**
+ * Contains data for a status code. 
+ *
+ * Status codes are singletons, and cannot be generated on the fly. If you need additional status codes, create globals
+ * for them, and then use them. Creating them within a function is either a memory leak (`new`) or a segfault (returning
+ * a pointer to a temporary object). 
+ *
+ * This class has conversion semantics to int and strings. Magpie's built-in status objects can therefore be used to
+ * compare status codes of other libraries, provided the status code is stored as an int, or a string only containing
+ * the code number. For example, with libcpr, this code is perfectly valid:
+ * ```cpp
+ * cpr::Get(cpr::Url{ ... }).status_code == magpie::Status::OK
+ * ```
+ * libcpr has no relation to this library (other than this library using it in tests), but because `status_code` is a
+ * number, the conversions makes it easier to use the same status codes with other unrelated libraries for
+ * standardisation. Probably only useful if you're writing tests for a magpie server, but ✨ the more you know ✨
+ */
 struct StatusCode {
     unsigned short statusCode;
     std::string_view statusLine;

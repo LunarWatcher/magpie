@@ -1,0 +1,117 @@
+#pragma once
+
+#include "magpie/logger/Logger.hpp"
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <nghttp2/nghttp2.h>
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include <zlib-ng.h>
+
+namespace magpie {
+
+class DataAdapter {
+public:
+    virtual size_t getChunk(
+        size_t len,
+        uint8_t* buf,
+        uint32_t* dataFlags
+    ) = 0;
+
+    virtual ~DataAdapter() = default;
+};
+
+class FixedAdapter : public DataAdapter {
+private:
+    std::string& data;
+
+    size_t readOffset = 0;
+public:
+    FixedAdapter(std::string& data)
+        : data(data) {}
+
+    virtual size_t getChunk(
+        size_t outLen,
+        uint8_t* buf,
+        uint32_t* dataFlags
+    ) override {
+        size_t len = std::min(
+            outLen,
+            data.size() - readOffset
+        );
+        std::memcpy(
+            buf,
+            data.c_str() + readOffset,
+            len
+        );
+
+        if (len + readOffset == data.size()) {
+            *dataFlags = NGHTTP2_DATA_FLAG_EOF;
+        } else {
+            readOffset += len;
+        }
+        return len;
+    }
+};
+
+// TODO: this should be split into a general compression adapter so there can be specific implementations
+// (maybe, I don't know how the other compression libs are set up)
+class CompressionAdapter : public DataAdapter {
+protected:
+    DataAdapter* readSource;
+
+    zng_stream stream;
+public:
+    CompressionAdapter(
+        DataAdapter* readSource
+    ) : readSource(readSource) {
+        stream.zfree = nullptr;
+        stream.zalloc = nullptr;
+        stream.opaque = nullptr;
+        if (zng_deflateInit(&stream, 6) != Z_OK) {
+            throw std::runtime_error("Critical zlib init error");
+        }
+    }
+    virtual ~CompressionAdapter() = default;
+
+    size_t getChunk(
+        size_t len,
+        uint8_t* buf,
+        uint32_t* dataFlags
+    ) override {
+        size_t blocks = (size_t) std::ceil(
+            (double) len / (double) 16384
+        );
+        // Per https://www.zlib.net/zlib_tech.html, there's 5 bytes of overhead per block. 
+        // This means that as long as we reserve enough bytes for the headers, we don't need to cache anything. We read
+        // less than we need to ensure that we have neough room for the headers.
+        size_t overheadBytes = 5 * (blocks + 1);
+
+        std::vector<uint8_t> intermediateBuf;
+        // The intermediateBuf is adjusted for the size of gzip overhead
+        intermediateBuf.resize(len - overheadBytes);
+        size_t readLen = readSource->getChunk(
+            intermediateBuf.size(),
+            intermediateBuf.data(),
+            dataFlags
+        );
+
+        stream.next_in = intermediateBuf.data();
+        stream.avail_in = readLen;
+        stream.next_out = buf;
+        stream.avail_out = len;
+
+        if (
+            zng_deflate(&stream, Z_FULL_FLUSH) != Z_OK
+        ) {
+            throw std::runtime_error("Failed to deflate");
+        }
+        size_t outputSize = len - stream.avail_out;
+        return outputSize;
+    }
+};
+
+}

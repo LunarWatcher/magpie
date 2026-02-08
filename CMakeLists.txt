@@ -57,6 +57,7 @@ message(STATUS "\t- Coverage: ${MAGPIE_COVERAGE}")
 find_package(OpenSSL REQUIRED)
 find_package(libnghttp2 REQUIRED)
 find_package(asio REQUIRED)
+find_package(zlib-ng REQUIRED)
 
 add_definitions(-DASIO_NO_DEPRECATED=true -DNGHTTP2_NO_SSIZE_T=true)
 
