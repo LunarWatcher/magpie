@@ -71,6 +71,7 @@ struct UserData {
      */
     std::unordered_map<int, std::shared_ptr<Request>> requests;
     std::unordered_map<int, std::shared_ptr<Response>> responses;
+    std::unordered_map<int, size_t> writeOffsets;
 };
 
 class Http2Adapter : public Adapter {

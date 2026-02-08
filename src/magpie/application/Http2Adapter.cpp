@@ -118,6 +118,7 @@ int _detail::onFrame(
     void* userData
 ) {
     // These variables are used to manage the lifecycle of the strings we hard-code.
+    // Not sure if these are actually necessary, but they need to be constants anyway.
     static std::string HTTP2_STATUS_HEADER = ":status";
     static std::string CONTENT_TYPE_HEADER = "content-type";
 
@@ -204,17 +205,31 @@ int _detail::onFrame(
         dp.source.ptr = response.get();
         dp.read_callback = [](
             nghttp2_session*,
-            int32_t,
+            int32_t streamId,
             uint8_t* buf, size_t length,
             uint32_t* data_flags,
             nghttp2_data_source* src,
-            void*
+            void* userData
         ) -> nghttp2_ssize {
+            auto& ud = *static_cast<UserData*>(userData);
+            auto& offset = ud.writeOffsets[streamId];
+
             auto res = (Response*) src->ptr;
             // logger::debug("Length/body length: {}/{}", length, res->body.size());
-            size_t len = std::min(length, res->body.size());
-            std::memcpy(buf, res->body.c_str(), len);
-            *data_flags = NGHTTP2_DATA_FLAG_EOF;
+            size_t len = std::min(
+                length,
+                res->body.size() - offset
+            );
+            std::memcpy(
+                buf,
+                res->body.c_str() + offset,
+                len
+            );
+            if (len + offset == res->body.size()) {
+                *data_flags = NGHTTP2_DATA_FLAG_EOF;
+            } else {
+                offset += len;
+            }
             return (nghttp2_ssize) len;
         };
         int rv = nghttp2_submit_response2(

@@ -126,3 +126,38 @@ TEST_CASE("Test argument routing", "[integration]") {
     REQUIRE(response.header.at("content-type") == "text/plain");
 }
 
+TEST_CASE("The server should allow arbitrarily large responses") {
+    
+    TestApp app;
+
+    cpr::Response response;
+    app->route<"/", magpie::Method::Get>([](auto*, magpie::Request&, magpie::Response& res) {
+        std::stringstream data;
+
+        for (size_t i = 0; i < 20'000'000; ++i) {
+            data << "a";
+        }
+
+        res = magpie::Response(
+            magpie::Status::OK,
+            data.str()
+        );
+    });
+
+    app.start();
+
+    auto wrongMethod = app.Get(
+        app.url("/")
+    );
+    REQUIRE(wrongMethod.status_code == magpie::Status::OK);
+    REQUIRE(wrongMethod.text.size() == 20'000'000);
+
+    for (auto& ch : wrongMethod.text) {
+        if (ch != 'a') {
+            // FAIL lets us avoid 20 million assertions, which would just fuck over the assertion stats
+            FAIL("Bad character: " << ch);
+        }
+    }
+
+
+}
