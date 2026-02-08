@@ -200,11 +200,6 @@ int _detail::onFrame(
             abort();
         }
 
-        // Kinda disappointed HTTP/2 doesn't support status messages, but whatever
-        // It really doesn't make sense to from any objective POV, but it's just such a nice way to fuck around in
-        // certain cases.
-        std::string statusCode = std::to_string(response->code->statusCode);
-
         nghttp2_data_provider2 dp;
         dp.source.ptr = response.get();
         dp.read_callback = [](
