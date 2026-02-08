@@ -24,26 +24,16 @@ struct Response {
     // TODO: does it really make sense for the content-type to be stored like this?
     std::string contentType = "text/plain";
 
-    Response() : code(&Status::OK), body(nullptr) {}
-
-    Response(const StatusCode& code, std::string&& body) 
-        : code(&code), body(std::make_shared<FixedAdapter>(std::move(body))) {}
-    Response(const StatusCode& code, std::string&& body, std::string&& contentType) 
-        : 
-        code(&code),
-        body(std::make_shared<FixedAdapter>(std::move(body))),
-        contentType(std::move(contentType)) 
-    {}
-
+    Response();
+    Response(const StatusCode& code, std::string&& body);
+    Response(const StatusCode& code, std::string&& body, std::string&& contentType);
 
     Response(Response&&) = delete;
     Response(Response&) = delete;
 
-    void setBody(std::string&& body) {
-        this->body = std::make_shared<FixedAdapter>(std::move(body));
-    }
-
     virtual ~Response() = default;
+
+    void setBody(std::string&& body);
 
     Response& operator=(Response&& other) = default;
 };

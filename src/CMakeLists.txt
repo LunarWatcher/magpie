@@ -3,6 +3,8 @@ add_library(magpie
 
     magpie/config/SSLConfig.cpp
 
+    magpie/transfer/Response.cpp
+
     magpie/transport/TCPServer.cpp
 )
 target_include_directories(
