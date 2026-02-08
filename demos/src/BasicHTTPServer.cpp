@@ -61,9 +61,9 @@ int main() {
     });
     app.route<"/{int}", magpie::Method::Get>([](Context*, magpie::Request&, auto& res, int64_t v) {
         if (v == 69) {
-            res.body = "Nice";
+            res.setBody("Nice");
         } else {
-            res.body = std::move(
+            res.setBody(
                 std::format("Your lucky number is {}", v)
             );
         }

@@ -125,7 +125,6 @@ int _detail::onFrame(
     static std::string HTTP2_STATUS_HEADER = ":status";
     static std::string CONTENT_TYPE_HEADER = "content-type";
     static std::string CONTENT_ENCODING = "content-encoding";
-    static std::string GZIP = "gzip";
 
     auto& ud = *static_cast<UserData*>(userData);
     auto* conn = ud.conn;
@@ -168,6 +167,12 @@ int _detail::onFrame(
             logger::critical("Failure: response is nullptr");
             return NGHTTP2_ERR_CALLBACK_FAILURE;
         }
+        // 3 * 2: :status, content-type, and content-encoding, * 2 for buffer
+        // 
+        // Doing this avoids copies, which is necessary to avoid UB
+        // 
+        nva.reserve(6 + response->headers.size());
+
         auto& headers = request->headers;
         auto& destination = headers.at(":path");
 
@@ -187,7 +192,8 @@ int _detail::onFrame(
         // Pretty sure the :status header is the only pseudo-header the server needs to care about. The client can send
         // three more: https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages#pseudo-headers
         // But this is a server, so don't need to care.
-        nva.push_back(makeNv(HTTP2_STATUS_HEADER, *response->code));
+        std::string codeAsStr = *response->code;
+        nva.push_back(makeNv(HTTP2_STATUS_HEADER, codeAsStr));
         // }}}
 
         // Not a pseudo-header
@@ -206,12 +212,8 @@ int _detail::onFrame(
             abort();
         }
 
-        FixedAdapter sourceData { response->body };
-        CompressionAdapter outputAdapter { &sourceData };
-        nva.push_back(makeNv(CONTENT_ENCODING, GZIP));
-
         nghttp2_data_provider2 dp;
-        dp.source.ptr = (DataAdapter*) &outputAdapter;
+        dp.source.ptr = response->body.get();
         dp.read_callback = [](
             nghttp2_session*,
             int32_t,
@@ -223,10 +225,16 @@ int _detail::onFrame(
             // auto& ud = *static_cast<UserData*>(userData);
 
             auto adapter = (DataAdapter*) src->ptr;
+            if (adapter == nullptr) {
+                *dataFlags |= NGHTTP2_DATA_FLAG_EOF;
+                return 0;
+            }
             // logger::debug("Length/body length: {}/{}", length, res->body.size());
-            return (nghttp2_ssize) adapter->getChunk(
+            nghttp2_ssize returnLen = (nghttp2_ssize) adapter->getChunk(
                 length, buf, dataFlags
             );
+
+            return returnLen;
         };
         int rv = nghttp2_submit_response2(
             sess,
@@ -242,6 +250,7 @@ int _detail::onFrame(
             return NGHTTP2_ERR_CALLBACK_FAILURE;
         }
         rv = nghttp2_session_send(sess);
+        logger::debug("Data sent!");
         if (rv != 0) {
             logger::error(
                 "Failed to send: {}", nghttp2_strerror(rv)

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "magpie/logger/Logger.hpp"
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -26,12 +25,12 @@ public:
 
 class FixedAdapter : public DataAdapter {
 private:
-    std::string& data;
+    std::string data;
 
     size_t readOffset = 0;
 public:
-    FixedAdapter(std::string& data)
-        : data(data) {}
+    FixedAdapter(std::string&& data)
+        : data(std::move(data)) {}
 
     virtual size_t getChunk(
         size_t outLen,
@@ -65,13 +64,25 @@ protected:
 
     zng_stream stream;
 public:
+    static inline int DEFLATE_HEADER = 0;
+    static inline int GZIP_HEADER = 16;
+
     CompressionAdapter(
-        DataAdapter* readSource
+        DataAdapter* readSource,
+        bool gzip = true
     ) : readSource(readSource) {
         stream.zfree = nullptr;
         stream.zalloc = nullptr;
         stream.opaque = nullptr;
-        if (zng_deflateInit(&stream, 6) != Z_OK) {
+    // int32_t zng_deflateInit2(zng_stream *strm, int32_t level, int32_t method, int32_t windowBits, int32_t memLevel, int32_t strategy);
+        if (zng_deflateInit2(
+                &stream,
+                6,
+                Z_DEFLATED,
+                15 | (gzip ? GZIP_HEADER : DEFLATE_HEADER), 
+                8,
+                Z_DEFAULT_STRATEGY
+        ) != Z_OK) {
             throw std::runtime_error("Critical zlib init error");
         }
     }

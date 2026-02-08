@@ -146,16 +146,25 @@ TEST_CASE("The server should allow arbitrarily large responses") {
 
     app.start();
 
-    auto wrongMethod = app.Get(
-        app.url("/")
-    );
-    REQUIRE(wrongMethod.status_code == magpie::Status::OK);
-    REQUIRE(wrongMethod.text.size() == 20'000'000);
+    SECTION("Unencoded") {
+        auto res = app.Get(
+            app.url("/"),
+            cpr::Header {
+                { "Accept-Encoding", "identity" },
+            }
+        );
+        REQUIRE(res.status_code == magpie::Status::OK);
+        REQUIRE(res.text.size() == 20'000'000);
+        // TODO: Not sure if this tests what I want it to test. Doesn't look like there's a combined transfer (body +
+        // headers), so not sure if this actually reflects the network size, or if this is just res.text.size() with
+        // extra steps.
+        REQUIRE(res.downloaded_bytes == 20'000'000);
 
-    for (auto& ch : wrongMethod.text) {
-        if (ch != 'a') {
-            // FAIL lets us avoid 20 million assertions, which would just fuck over the assertion stats
-            FAIL("Bad character: " << ch);
+        for (auto& ch : res.text) {
+            if (ch != 'a') {
+                // FAIL lets us avoid 20 million assertions, which would just fuck over the assertion stats
+                FAIL("Bad character: " << ch);
+            }
         }
     }
 

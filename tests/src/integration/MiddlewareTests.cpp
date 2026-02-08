@@ -90,7 +90,7 @@ TEST_CASE("Verify that a single middleware works as expected") {
 
             ctx->var = 69;
             res.code = &magpie::Status::ImATeapot;
-            res.body = "Would you care for a spot of tea?";
+            res.setBody("Would you care for a spot of tea?");
         }
     );
     app.start();

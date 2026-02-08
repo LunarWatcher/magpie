@@ -25,6 +25,7 @@ namespace magpie {
 struct StatusCode {
     unsigned short statusCode;
     std::string_view statusLine;
+    std::string codeAsStr;
 
     /**
      * \param statusCode    The HTTP status code
