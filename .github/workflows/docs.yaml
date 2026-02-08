@@ -24,14 +24,12 @@ jobs:
       - name: Fix git ownership
         run: |
           git config --global --add safe.directory $(pwd)
-      # Not used for generating docs, but required due to how the conan setup is configured
-      # TODO: figure out if there's an easier way to check if we should include conan
-      - name: Install Conan
-        uses: conan-io/setup-conan@v1
       - name: Install doxygen
         run: |
-          sudo apt-get update
-          sudo apt-get install -y doxygen graphviz
+          pip3 install --break-system-packages conan
+
+          apt-get update
+          apt-get install -y doxygen graphviz
       - name: Generate docs
         run: |
           mkdir build
