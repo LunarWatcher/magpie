@@ -15,7 +15,7 @@ protected:
     const AppConfig config;
 public:
     BaseApp(AppConfig&& config) : config(std::move(config)) {}
-    ~BaseApp() = default;
+    virtual ~BaseApp() = default;
 
     virtual const routing::BaseRouter& getRouter() = 0;
 

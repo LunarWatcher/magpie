@@ -40,12 +40,12 @@ struct TestApp {
                 magpie::SSLConfig::fromGeneratedCertificate()
             );
         }
+        isSsl = config.ssl.has_value();
+
         app = std::make_shared<magpie::App<CtxType>>(
             ctx,
             std::move(config)
         );
-
-        isSsl = config.ssl.has_value();
     }
 
     void start() {

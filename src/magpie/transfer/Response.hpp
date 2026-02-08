@@ -26,15 +26,13 @@ struct Response {
     Response(const StatusCode& code, std::string&& body, std::string&& contentType) 
         : code(&code), body(std::move(body)), contentType(std::move(contentType)) {}
 
-    Response(Response&& other) 
-        : headers(std::move(other.headers)),
-          code(other.code),
-          body(std::move(other.body)),
-          contentType(std::move(other.contentType)) {}
+
+    Response(Response&&) = delete;
+    Response(Response&) = delete;
 
     virtual ~Response() = default;
 
-    Response& operator=(Response&&) = default;
+    Response& operator=(Response&& other) = default;
 };
 
 }

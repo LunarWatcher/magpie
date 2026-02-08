@@ -44,7 +44,7 @@ endif()
 
 option(MAGPIE_COVERAGE "Whether or not to build with test coverage" OFF)
 option(MAGPIE_DOCS "Whether or not to build doxygen docs" OFF)
-option(MAGPIE_SANITISE "Whether or not to -fsanitise=undefined" OFF)
+option(MAGPIE_SANITISE "Whether or not to -fsanitise=undefined. No effect on Windows" OFF)
 
 message(STATUS "Magpie build configuration:")
 message(STATUS "\t- Demos: ${MAGPIE_ENABLE_DEMOS}")
@@ -76,12 +76,12 @@ if (MAGPIE_COVERAGE)
     )
 endif()
 
+if (NOT WIN32 AND MAGPIE_SANITISE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
+endif()
+
 add_subdirectory(src)
 
-add_custom_target(run
-    COMMAND magpie
-    DEPENDS magpie
-    COMMENT "Run magpie")
 if (MAGPIE_BUILD_TESTS)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
     add_custom_target(test
@@ -91,5 +91,21 @@ if (MAGPIE_BUILD_TESTS)
 endif()
 if (MAGPIE_ENABLE_DEMOS)
     add_subdirectory(demos)
+endif()
+
+if (MAGPIE_DOCS)
+    find_package(Doxygen MODULE REQUIRED)
+    set(DOXYGEN_GENERATE_HTML YES)
+    set(DOXYGEN_GENERATE_MAN NO)
+    set(DOXYGEN_EXCLUDE_SYMBOLS "std::*")
+    set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "README.md")
+    set(DOXYGEN_RECURSIVE YES)
+    list(APPEND DOXYGEN_EXCLUDE_PATTERNS "*/build/*" "*/_deps/*")
+
+    doxygen_add_docs(
+        doxygen
+        ${PROJECT_SOURCE_DIR}
+        COMMENT "Generate documentation"
+    )
 endif()
 # vim:ft=cmake

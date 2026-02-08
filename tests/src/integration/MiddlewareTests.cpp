@@ -27,7 +27,9 @@ public:
                 "Now you're gone"
             );
         } else {
+            res.headers["before"] = "yes";
             next(proc, ctx, req, res);
+            res.headers["after"] = "yes";
         }
     }
 
@@ -80,16 +82,50 @@ TEST_CASE("Verify that a single middleware works as expected") {
             res = magpie::Response(magpie::Status::OK, "Response");
         }
     );
+    app->route<"/non-move-init", magpie::Method::Get>(
+        [](MiddlewareTestContext* ctx, auto&, auto& res) {
+            REQUIRE(ctx != nullptr);
+            REQUIRE(ctx->app != nullptr);
+            REQUIRE(ctx->constant == "trans rights are human rights");
+
+            ctx->var = 69;
+            res.code = &magpie::Status::ImATeapot;
+            res.body = "Would you care for a spot of tea?";
+        }
+    );
     app.start();
     REQUIRE(peekableContext->var == 0);
 
     SECTION("Plain request is not interfered with") {
         auto res = app.Get(app.url());
 
+        INFO(res.error.message);
+        INFO(res.text);
         REQUIRE(res.status_code == 200);
         REQUIRE(res.text == "Response");
 
         REQUIRE(static_cast<MiddlewareTestContext*>(app->getContext())->var == 69);
+        {
+            INFO("Before the route invocation, header integrity is not guaranteed.");
+            REQUIRE_FALSE(res.header.contains("before"));
+        }
+        {
+            INFO("After route invocation, headers should persist");
+            REQUIRE(res.header.at("after") == "yes");
+        }
+    }
+
+    SECTION("Plain request on a non-move assignment endpoint does include the before header") {
+        auto res = app.Get(app.url("/non-move-init"));
+
+        INFO(res.error.message);
+        INFO(res.text);
+        REQUIRE(res.status_code == magpie::Status::ImATeapot);
+        REQUIRE(res.text == "Would you care for a spot of tea?");
+
+        REQUIRE(static_cast<MiddlewareTestContext*>(app->getContext())->var == 69);
+        REQUIRE(res.header.contains("before"));
+        REQUIRE(res.header.at("after") == "yes");
     }
 
     SECTION("A non-forwarding middleware does not pass through") {

@@ -23,7 +23,7 @@ public:
     application::Http2Adapter adapter;
     BaseApp* app;
 
-    BaseConnection(BaseApp* app) : adapter(this), app(app) {}
+    BaseConnection(BaseApp* app) : recv(), adapter(this), app(app) {}
     virtual ~BaseConnection() = default;
 
     virtual size_t write(

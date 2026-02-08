@@ -95,7 +95,7 @@ public:
         // TODO: handle query params
         auto callback = this->routes.getRoute(segments, req.method);
 
-        std::visit([&](auto& it) {
+        std::visit([this, &res, &req, ctx, &segments](auto& it) {
             using T = std::decay_t<decltype(it)>;
             if constexpr (std::is_same_v<dsa::FindError, T>) {
                 if (it == dsa::FindError::IllegalMethod) {
@@ -116,13 +116,12 @@ public:
                     it.get(),
                     std::vector<Middlewares<ContextType>*> {
                         static_cast<ContextApp<ContextType>*>(castCtx->app)->getMiddlewaresAsPtr()
-                    }
-                ).invokeRoute(
+                    },
                     segments,
                     castCtx,
                     req,
                     res
-                );
+                ).invokeRoute();
             }
         }, callback);
     }

@@ -14,7 +14,7 @@ namespace magpie::routing {
 
 template <FixedString path, data::IsCommonData ContextType>
 struct Route : public BaseRoute<ContextType> {
-    RouteCallback<path, ContextType> callback;
+    const RouteCallback<path, ContextType> callback;
     constexpr static size_t Size = guessParams<path>();
     constexpr static inline auto typeTuples = getForwardableIndices<path>();
 
@@ -45,14 +45,18 @@ struct Route : public BaseRoute<ContextType> {
         Response& res
     ) override {
         if constexpr (Size == 0) {
-            callback(context, req, res);
+            callback(
+                context,
+                std::ref(req),
+                std::ref(res)
+            );
         } else {
             return std::apply(
                 [&](auto&&... converted) {
                     callback(
                         context,
-                        req,
-                        res,
+                        std::ref(req),
+                        std::ref(res),
                         std::forward<decltype(converted)>(converted)...
                     );
                 },

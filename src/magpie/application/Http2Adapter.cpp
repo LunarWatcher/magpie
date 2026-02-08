@@ -6,6 +6,7 @@
 #include "magpie/transport/Connection.hpp"
 #include "magpie/transport/BaseConnection.hpp"
 #include "magpie/App.hpp"
+#include "magpie/utility/ErrorHandler.hpp"
 #include <stdexcept>
 #include <string>
 
@@ -138,8 +139,8 @@ int _detail::onFrame(
         // TODO: this is dumb and you should feel bad
         auto makeNv = [](const std::string &name, const std::string &value) {
             nghttp2_nv nv;
-            nv.name = (uint8_t*)name.c_str();
-            nv.value = (uint8_t*)value.c_str();
+            nv.name = (uint8_t*) name.c_str();
+            nv.value = (uint8_t*) value.c_str();
             nv.namelen = name.size();
             nv.valuelen = value.size();
             nv.flags = NGHTTP2_NV_FLAG_NONE;
@@ -164,14 +165,27 @@ int _detail::onFrame(
         auto& headers = request->headers;
         auto& destination = headers.at(":path");
 
-        // This is where we'd feed in data to build a response. nghttp2_data_provider should probably take a Response
-        // object as its data source.
-        router.invokeRoute(
-            destination,
-            app->getContext(),
-            *request,
-            *response
-        );
+        utility::runWithErrorLogging([&]() {
+            router.invokeRoute(
+                destination,
+                app->getContext(),
+                *request,
+                *response
+            );
+        }, response.get());
+
+        // Pseudo-headers {{{
+        // > ... and must place pseudo-headers before regular header fields.
+        // https://nghttp2.org/documentation/nghttp2_submit_response2.html#c.nghttp2_submit_response2
+        //
+        // Pretty sure the :status header is the only pseudo-header the server needs to care about. The client can send
+        // three more: https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Messages#pseudo-headers
+        // But this is a server, so don't need to care.
+        nva.push_back(makeNv(HTTP2_STATUS_HEADER, *response->code));
+        // }}}
+
+        // Not a pseudo-header
+        nva.push_back(makeNv(CONTENT_TYPE_HEADER, response->contentType));
 
         for (auto& [header, value] : response->headers) {
             nva.push_back(makeNv(header, value));
@@ -191,20 +205,18 @@ int _detail::onFrame(
         // certain cases.
         std::string statusCode = std::to_string(response->code->statusCode);
 
-        nva.push_back(makeNv(HTTP2_STATUS_HEADER, statusCode));
-        nva.push_back(makeNv(CONTENT_TYPE_HEADER, response->contentType));
-
         nghttp2_data_provider2 dp;
         dp.source.ptr = response.get();
         dp.read_callback = [](
-            nghttp2_session *,
+            nghttp2_session*,
             int32_t,
-            uint8_t *buf, size_t length,
-            uint32_t *data_flags,
+            uint8_t* buf, size_t length,
+            uint32_t* data_flags,
             nghttp2_data_source* src,
-            void *
+            void*
         ) -> nghttp2_ssize {
             auto res = (Response*) src->ptr;
+            // logger::debug("Length/body length: {}/{}", length, res->body.size());
             size_t len = std::min(length, res->body.size());
             std::memcpy(buf, res->body.c_str(), len);
             *data_flags = NGHTTP2_DATA_FLAG_EOF;
@@ -218,12 +230,16 @@ int _detail::onFrame(
             &dp
         );
         if (rv != 0) {
-            std::cerr << "Failed to submit: " << nghttp2_strerror(rv) << "\n";
+            logger::error(
+                "Failed to submit: {}", nghttp2_strerror(rv)
+            );
             return NGHTTP2_ERR_CALLBACK_FAILURE;
         }
         rv = nghttp2_session_send(sess);
         if (rv != 0) {
-            std::cerr << "Failed to send: " << nghttp2_strerror(rv) << "\n";
+            logger::error(
+                "Failed to send: {}", nghttp2_strerror(rv)
+            );
             return NGHTTP2_ERR_CALLBACK_FAILURE;
         }
     }

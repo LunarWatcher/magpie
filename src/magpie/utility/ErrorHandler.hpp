@@ -1,10 +1,23 @@
 #pragma once
 
 #include "magpie/logger/Logger.hpp"
+#include "magpie/transfer/Response.hpp"
+#include "magpie/transfer/StatusCode.hpp"
 #include <string>
 #include <functional>
 
 namespace magpie::utility {
+
+inline void defaultErrorResponse(Response* res) {
+    if (res == nullptr) {
+        return;
+    }
+
+    *res = Response(
+        Status::InternalServerError,
+        "Unexpected error. Try again later."
+    );
+}
 
 /**
  * Utility function used for handling errors. Currently only used for error logging, but could be expanded with
@@ -19,7 +32,8 @@ namespace magpie::utility {
  * how I want to structure that yet.
  */
 inline void runWithErrorLogging(
-    std::function<void()> errorHandled
+    std::function<void()> errorHandled,
+    Response* res = nullptr
 ) {
 
     try {
@@ -28,10 +42,12 @@ inline void runWithErrorLogging(
         logger::error(
             "Uncaught exception: {}", e.what()
         );
+        defaultErrorResponse(res);
     } catch (const std::string& e) {
         logger::error(
             "Uncaught {{str}}exception: {}", e
         );
+        defaultErrorResponse(res);
     } catch (...) {
         // TODO: how does catch2 do this kind of logging? I doubt they have a full cascade of every single
         // type that may be caught in anything ever
@@ -39,6 +55,7 @@ inline void runWithErrorLogging(
         logger::critical(
             "Uncaught exception of unknown type (cannot log)"
         );
+        defaultErrorResponse(res);
     }
 }
 

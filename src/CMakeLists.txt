@@ -18,4 +18,5 @@ PUBLIC
     asio::asio
     OpenSSL::SSL
 )
+
 # vim:ft=cmake

@@ -2,11 +2,32 @@
 #include "magpie/config/SSLConfig.hpp"
 #include "magpie/data/CommonData.hpp"
 #include "magpie/transfer/Response.hpp"
+#include "magpie/transfer/StatusCode.hpp"
 
 struct Sessions { };
 
 struct Context : public magpie::data::CommonData {
     Sessions sess;
+};
+
+class TestMiddleware : public magpie::Middleware<Context> {
+public:
+    void onRequest(
+        magpie::IMiddlewareProcessor<Context> *proc,
+        Context* ctx,
+        magpie::Request& req,
+        magpie::Response& res
+    ) override {
+        if (req.headers.contains("x-reject")) {
+            res = magpie::Response(
+                magpie::Status::BadRequest,
+                "Now you're gone"
+            );
+        } else {
+            next(proc, ctx, req, res);
+        }
+        res.headers["Server"] = "magpie-demo-basic";
+    }
 };
 
 int main() {
@@ -20,6 +41,10 @@ int main() {
             .ssl = magpie::SSLConfig::fromGeneratedCertificate(),
         },
     };
+
+    app.registerGlobalMiddlewares({
+        std::make_shared<TestMiddleware>(),
+    });
 
     app.route<"/", magpie::Method::Get>([](Context*, magpie::Request&, magpie::Response& res) {
         res = magpie::Response(
