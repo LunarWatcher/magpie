@@ -4,7 +4,6 @@
 #include <string>
 #include <unordered_map>
 #include <magpie/routing/Compile.hpp>
-#include <variant>
 #include "StatusCode.hpp"
 #include "magpie/transfer/adapters/DataAdapter.hpp"
 

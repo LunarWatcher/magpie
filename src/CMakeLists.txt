@@ -5,6 +5,8 @@ add_library(magpie
 
     magpie/transfer/Response.cpp
 
+    magpie/transfer/adapters/FixedDataAdapter.cpp
+
     magpie/transport/TCPServer.cpp
 )
 target_include_directories(

@@ -12,6 +12,14 @@
 
 namespace magpie {
 
+/**
+ * Base class for data adapters.
+ *
+ * Data adapters are responsible for mediating between some form of input data, and the output at the HttpAdapter level.
+ * The Http2Adapter, for example, is event-driven, and therefore accepts writes in blocks rather than in full chunks of
+ * text. Therefore, both streamed and in-memory data being sent must be modified before it actually sets sent to the
+ * client. This class defines the standard interface for this process.
+ */
 class DataAdapter {
 public:
     virtual size_t getChunk(
@@ -21,39 +29,6 @@ public:
     ) = 0;
 
     virtual ~DataAdapter() = default;
-};
-
-class FixedAdapter : public DataAdapter {
-private:
-    std::string data;
-
-    size_t readOffset = 0;
-public:
-    FixedAdapter(std::string&& data)
-        : data(std::move(data)) {}
-
-    virtual size_t getChunk(
-        size_t outLen,
-        uint8_t* buf,
-        uint32_t* dataFlags
-    ) override {
-        size_t len = std::min(
-            outLen,
-            data.size() - readOffset
-        );
-        std::memcpy(
-            buf,
-            data.c_str() + readOffset,
-            len
-        );
-
-        if (len + readOffset == data.size()) {
-            *dataFlags = NGHTTP2_DATA_FLAG_EOF;
-        } else {
-            readOffset += len;
-        }
-        return len;
-    }
 };
 
 // TODO: this should be split into a general compression adapter so there can be specific implementations
