@@ -3,7 +3,7 @@
 #include <nghttp2/nghttp2.h>
 #include "magpie/application/Methods.hpp"
 #include "magpie/transfer/StatusCode.hpp"
-#include "magpie/transfer/adapters/Adapter.hpp"
+#include "magpie/transfer/adapters/DataAdapter.hpp"
 #include "magpie/transport/Connection.hpp"
 #include "magpie/transport/BaseConnection.hpp"
 #include "magpie/App.hpp"
