@@ -24,6 +24,10 @@ public:
         uint8_t* buf,
         uint32_t* dataFlags
     ) override;
+
+    size_t getReadOffset() {
+        return readOffset;
+    }
 };
 
 }

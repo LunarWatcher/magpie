@@ -7,6 +7,8 @@ add_executable(tests
 
     src/routing/RouteCompilationTests.cpp
     src/routing/RouterTests.cpp
+
+    src/transfer/adapters/FixedDataAdapterTests.cpp
 )
 
 Include(FetchContent)

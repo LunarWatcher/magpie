@@ -6,7 +6,6 @@
 #include <cstring>
 #include <nghttp2/nghttp2.h>
 #include <stdexcept>
-#include <string>
 #include <vector>
 #include <zlib-ng.h>
 
@@ -42,6 +41,7 @@ public:
     static inline int DEFLATE_HEADER = 0;
     static inline int GZIP_HEADER = 16;
 
+    [[deprecated("Do not use, only kept in the code for easy access")]]
     CompressionAdapter(
         DataAdapter* readSource,
         bool gzip = true
