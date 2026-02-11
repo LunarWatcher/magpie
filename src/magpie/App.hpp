@@ -55,15 +55,17 @@ public:
      * HTTP methods have distinct meanings per the standard. It's therefore arguably never appropriate to use the same
      * handler for different methods. If you have code in common, instead of using the same handler, move that code into
      * reusable modules.
+     *
+     * \returns A BaseRoute instance that can be used for some further configuration.
      */
     template <
         routing::FixedString path,
         Method::HttpMethod method
     >
-    void route(
+    routing::BaseRoute<ContextType>* route(
         const routing::RouteCallback<path, ContextType>& callback
     ) {
-        std::static_pointer_cast<routing::Router<ContextType>>(router)
+        return std::static_pointer_cast<routing::Router<ContextType>>(router)
             ->template registerRoute<path>(
                 callback,
                 method

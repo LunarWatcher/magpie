@@ -1,5 +1,6 @@
 #pragma once
 
+#include "magpie/middlewares/Middleware.hpp"
 #include "magpie/routing/Compile.hpp"
 #include "magpie/transfer/Request.hpp"
 #include "magpie/transfer/Response.hpp"
@@ -12,7 +13,11 @@ template <FixedString path, data::IsCommonData ContextType>
 using RouteCallback = FunctionSignature<path, void, ContextType*, Request&, Response&>::type;
 
 template <data::IsCommonData ContextType>
-struct BaseRoute {
+class BaseRoute {
+protected:
+    Middlewares<ContextType> middlewares;
+public:
+
     virtual ~BaseRoute() = default;
 
     virtual void invoke(
@@ -21,6 +26,15 @@ struct BaseRoute {
         Request& req,
         Response& res
     ) = 0;
+
+    virtual BaseRoute* registerMiddlewares(std::vector<std::shared_ptr<Middleware<ContextType>>>&& middlewares) {
+        this->middlewares.middlewares = std::move(middlewares);
+        return this;
+    }
+
+    virtual Middlewares<ContextType>* getMiddlewaresAsPtr() {
+        return &middlewares;
+    }
 };
 
 }

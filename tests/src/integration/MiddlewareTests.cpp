@@ -142,3 +142,76 @@ TEST_CASE("Verify that a single middleware works as expected") {
         REQUIRE(peekableContext->var == 0);
     }
 }
+
+TEST_CASE("Verify that local middlewares work") {
+    auto peekableContext = std::make_shared<MiddlewareTestContext>();
+    TestApp<MiddlewareTestContext> app(
+        peekableContext
+    );
+
+    app->route<"/", magpie::Method::Get>(
+        [](MiddlewareTestContext* ctx, auto&, auto& res) {
+            REQUIRE(ctx != nullptr);
+            REQUIRE(ctx->app != nullptr);
+            REQUIRE(ctx->constant == "trans rights are human rights");
+
+            ctx->var = 69;
+            res = magpie::Response(magpie::Status::OK, "Response");
+        }
+    );
+    app->route<"/middlewared", magpie::Method::Get>(
+        [](MiddlewareTestContext* ctx, auto&, auto& res) {
+            REQUIRE(ctx != nullptr);
+            REQUIRE(ctx->app != nullptr);
+            REQUIRE(ctx->constant == "trans rights are human rights");
+
+            ctx->var = 69;
+            res.code = &magpie::Status::ImATeapot;
+            res.setBody("Would you care for a spot of tea?");
+        }
+    )->registerMiddlewares({
+        std::make_shared<FuckeryMiddleware>()
+    });
+    app.start();
+    REQUIRE(peekableContext->var == 0);
+
+    SECTION("Local middlewares are local") {
+        auto res = app.Get(
+            app.url("/"),
+            cpr::Header {
+                { "X-Fuckery", "owo" },
+            }
+        );
+
+        REQUIRE(res.status_code == magpie::Status::OK);
+        REQUIRE(res.text == "Response");
+
+        REQUIRE(peekableContext->var == 69);
+        REQUIRE_FALSE(res.header.contains("after"));
+    }
+    SECTION("A non-forwarding local middleware does not pass through") {
+        auto res = app.Get(
+            app.url("/middlewared"),
+            cpr::Header {
+                { "X-Fuckery", "owo" },
+            }
+        );
+
+        REQUIRE(res.status_code == magpie::Status::Gone);
+        REQUIRE(res.text == "Now you're gone");
+
+        REQUIRE(peekableContext->var == 0);
+        REQUIRE_FALSE(res.header.contains("after"));
+    }
+    SECTION("A non-forwarding local middleware does not pass through") {
+        auto res = app.Get(
+            app.url("/middlewared")
+        );
+
+        REQUIRE(res.status_code == magpie::Status::ImATeapot);
+        REQUIRE(res.text == "Would you care for a spot of tea?");
+
+        REQUIRE(peekableContext->var == 69);
+        REQUIRE(res.header.contains("after"));
+    }
+}

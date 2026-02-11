@@ -25,7 +25,7 @@ private:
     dsa::RadixTree<std::shared_ptr<BaseRoute<ContextType>>> routes;
 public:
     template <FixedString path>
-    void registerRoute(
+    BaseRoute<ContextType>* registerRoute(
         const RouteCallback<path, ContextType>& callback,
         Method::HttpMethod method
     ) {
@@ -35,6 +35,7 @@ public:
         auto splitPath = pathToComponents(path.c_str());
 
         this->routes.pushRoute(route, method, splitPath);
+        return route.get();
     }
 
     constexpr void normalisePath(
@@ -112,10 +113,12 @@ public:
             } else {
 
                 auto* castCtx = static_cast<ContextType*>(ctx);
+                auto* route = it.get();
                 MiddlewareProcessor<ContextType>(
-                    it.get(),
+                    route,
                     std::vector<Middlewares<ContextType>*> {
-                        static_cast<ContextApp<ContextType>*>(castCtx->app)->getMiddlewaresAsPtr()
+                        static_cast<ContextApp<ContextType>*>(castCtx->app)->getMiddlewaresAsPtr(),
+                        route->getMiddlewaresAsPtr(),
                     },
                     segments,
                     castCtx,
