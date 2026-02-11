@@ -9,7 +9,7 @@ TEST_CASE("Test FixedAdapter offsets") {
         std::move(sourceData)
     };
 
-    std::string reconstructed('\0', sourceLength);
+    std::string reconstructed;
 
     std::array<uint8_t, 2> buffer;
     uint32_t flags = 0;
