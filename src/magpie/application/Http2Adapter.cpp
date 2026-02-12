@@ -134,8 +134,11 @@ int _detail::onFrame(
     }
     // TODO: this code doesn't make much sense if we're 
     if (
-        frame->hd.type == NGHTTP2_HEADERS
-        && frame->headers.cat == NGHTTP2_HCAT_REQUEST
+        (
+            frame->hd.type == NGHTTP2_DATA
+            || frame->hd.type == NGHTTP2_HEADERS
+        )
+        && frame->hd.flags & NGHTTP2_FLAG_END_STREAM
     ) {
         logger::debug("Starting response");
 
