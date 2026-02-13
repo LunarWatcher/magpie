@@ -127,7 +127,6 @@ TEST_CASE("Test argument routing", "[integration]") {
 }
 
 TEST_CASE("The server should allow arbitrarily large responses") {
-    
     TestApp app;
 
     cpr::Response response;
@@ -168,4 +167,25 @@ TEST_CASE("The server should allow arbitrarily large responses") {
         }
     }
 
+}
+
+TEST_CASE("The Request object should expose the IP address") {
+    TestApp app;
+
+    cpr::Response response;
+    app->route<"/", magpie::Method::Get>([](auto*, magpie::Request& req, magpie::Response& res) {
+        res = magpie::Response(
+            magpie::Status::OK,
+            std::string(req.ipAddr)
+        );
+    });
+
+    app.start();
+
+    auto res = app.Get(
+        app.url()
+    );
+    REQUIRE(
+        res.text == "127.0.0.1"
+    );
 }

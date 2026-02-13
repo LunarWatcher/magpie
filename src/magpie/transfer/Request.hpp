@@ -13,6 +13,7 @@ struct Request {
     // TODO: not sure how requests should deal with streamed input, largely because there's no way to signal which to
     // use in the current setup
     std::string body;
+    std::string ipAddr;
     Method::HttpMethod method;
 };
 

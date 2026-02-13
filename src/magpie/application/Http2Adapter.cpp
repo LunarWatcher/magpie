@@ -131,8 +131,11 @@ int _detail::onFrame(
     if (frame->hd.type == NGHTTP2_HEADERS &&
         frame->hd.flags & NGHTTP2_FLAG_END_HEADERS) {
         logger::debug("End of header stream");
+        // TODO: doing it this way enables us to stream bodies, but hooking up this particular state machine would be
+        // involved. Not sure if this is desirable. `onFrame` would have to return, so the control flow works entirely
+        // differently, or would spawn a sub-task.
     }
-    // TODO: this code doesn't make much sense if we're 
+
     if (
         (
             frame->hd.type == NGHTTP2_DATA
@@ -178,6 +181,8 @@ int _detail::onFrame(
 
         auto& headers = request->headers;
         auto& destination = headers.at(":path");
+
+        request->ipAddr = conn->getIPAddr();
 
         utility::runWithErrorLogging([&]() {
             router.invokeRoute(

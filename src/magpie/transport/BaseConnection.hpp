@@ -36,6 +36,8 @@ public:
         const std::string& data
     ) = 0;
 
+    virtual std::string getIPAddr() = 0;
+
 };
 
 template <typename SocketType, typename NativeType = SocketType>
@@ -99,6 +101,10 @@ public:
                 }
             }
         );
+    }
+
+    std::string getIPAddr() override {
+        return getRawSocket().remote_endpoint().address().to_string();
     }
 };
 
