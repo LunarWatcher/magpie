@@ -1,5 +1,8 @@
 #include "magpie/transfer/adapters/FixedDataAdapter.hpp"
 #include <catch2/catch_test_macros.hpp>
+#include <array>
+#include <string>
+#include <cstddef>
 
 TEST_CASE("Test FixedAdapter offsets") {
     std::string sourceData = "Good girl :3";
