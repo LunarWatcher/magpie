@@ -57,3 +57,26 @@ jobs:
         run: |
           cd build
           cmake --build . --target test --config Release -j 4
+  test-windows-debug-because-windows-trash:
+    runs-on: windows-latest
+    name: Build and test on Windows (debug)
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install conan
+        run: |
+          pip install conan
+      - name: Grab conan_provider.cmake
+        run: |
+          mkdir build
+          cd build
+          C:/msys64/usr/bin/wget.exe https://github.com/conan-io/cmake-conan/raw/refs/heads/develop2/conan_provider.cmake
+      - name: Build
+        run: |
+          cd build
+          dir
+          cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_CONAN=ON
+          cmake --build . --config Debug -j 4
+      - name: Test
+        run: |
+          cd build
+          cmake --build . --target test --config Debug -j 4
