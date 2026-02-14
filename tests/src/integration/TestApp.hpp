@@ -60,6 +60,10 @@ struct TestApp {
         }
     }
 
+    std::string test() {
+        return "hi";
+    }
+
     std::string baseUrl() {
         return std::format(
             "{}://localhost:{}",

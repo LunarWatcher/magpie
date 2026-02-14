@@ -14,12 +14,12 @@ public:
         const std::string& certFile
     );
     SSLConfig(SSLConfig&) = delete;
-    SSLConfig(SSLConfig&& other):
+    SSLConfig(SSLConfig&& other) noexcept :
         keyFile(std::move(other.keyFile)), 
         certFile(std::move(other.certFile)) {
     }
 
-    SSLConfig& operator=(SSLConfig&& other) {
+    SSLConfig& operator=(SSLConfig&& other) noexcept {
         this->keyFile = std::move(other.keyFile);
         this->certFile = std::move(other.certFile);
         return *this;

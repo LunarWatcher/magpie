@@ -33,7 +33,7 @@ SSLConfig SSLConfig::fromGeneratedCertificate() {
         ASN1_INTEGER_set(X509_get_serialNumber(x509), 69);
 
         X509_gmtime_adj(X509_get_notBefore(x509), 0);
-        X509_gmtime_adj(X509_get_notAfter(x509), 60 * 60 * 24 * 365 * 10); // 10 years from now
+        X509_gmtime_adj(X509_get_notAfter(x509), 60ll * 60 * 24 * 365 * 10); // 10 years from now
 
         X509_set_pubkey(x509, privateKey);
         auto name = X509_get_subject_name(x509);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "magpie/application/Methods.hpp"
-#include "magpie/logger/Logger.hpp"
 #include "magpie/routing/Compile.hpp"
 
 #include <variant>
@@ -147,6 +146,13 @@ public:
             if (!hasMatch) {
                 return FindError::NoMatch;
             }
+        }
+        // Necessary to avoid incorrect IllegalMethod in sub-routes
+        // Given a server with the route /some/path, / is technically also defined with `value.size() == 0`, as it isn't
+        // a valid route.
+        // This check correctly handles those cases.
+        if (node->value.size() == 0) {
+            return FindError::NoMatch;
         }
         auto it = node->value.find(method);
         if (it == node->value.end()) {

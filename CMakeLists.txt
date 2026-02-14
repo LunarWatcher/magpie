@@ -29,7 +29,7 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set(MAGPIE_STANDALONE ON)
 
     if (NOT WIN32)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
     endif()
 
     option(MAGPIE_ENABLE_DEMOS "Whether or not to build demos" ON)

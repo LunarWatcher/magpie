@@ -87,12 +87,17 @@ namespace Status {
     constexpr StatusCode Conflict(409, "Conflict");
     constexpr StatusCode Gone(410, "Gone");
     constexpr StatusCode PayloadTooLarge(413, "Payload Too Large");
+    constexpr StatusCode URITooLong(414, "URI Too Long");
     constexpr StatusCode UnsupportedMediaType(415, "Unsupported Media Type");
     constexpr StatusCode RangeNotSatisfiable(416, "Range Not Satisfiable");
     constexpr StatusCode ExpectationFailed(417, "Expectation Failed");
     constexpr StatusCode ImATeapot(418, "I'm a teapot");
     constexpr StatusCode PreconditionRequired(428, "Precondition Required");
     constexpr StatusCode TooManyRequests(429, "Too Many Requests");
+    /**
+     * Only respected by nginx
+     */
+    constexpr StatusCode NginxNoResponse(444, "No Response");
     constexpr StatusCode UnavailableForLegalReasons(451, "Unavailable For Legal Reasons");
 
     constexpr StatusCode InternalServerError(500, "Internal Server Error");
@@ -100,6 +105,7 @@ namespace Status {
     constexpr StatusCode BadGateway(502, "Bad Gateway");
     constexpr StatusCode ServiceUnavailable(503, "Service Unavailable");
     constexpr StatusCode GatewayTimeout(504, "Gateway Timeout");
+    constexpr StatusCode HttpVersionNotSupported(505, "HTTP Version Not Supported");
     constexpr StatusCode VariantAlsoNegotiates(506, "Variant Also Negotiates");
 
 }
