@@ -32,7 +32,7 @@ inline void defaultErrorResponse(Response* res) {
  * how I want to structure that yet.
  */
 inline void runWithErrorLogging(
-    std::function<void()> errorHandled,
+    const std::function<void()>& errorHandled,
     Response* res = nullptr
 ) {
 

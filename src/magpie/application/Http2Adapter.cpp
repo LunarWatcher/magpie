@@ -85,6 +85,7 @@ Http2Adapter::~Http2Adapter() {
             this->callbacks
         );
     }
+    logger::info("Killing connection");
 }
 
 void Http2Adapter::parse(
@@ -147,6 +148,7 @@ int _detail::onFrame(
 
         int32_t streamId = frame->hd.stream_id;
         std::vector<nghttp2_nv> nva;
+
         // TODO: this is dumb and you should feel bad
         auto makeNv = [](const std::string &name, const std::string &value) {
             nghttp2_nv nv;
@@ -182,7 +184,18 @@ int _detail::onFrame(
         auto& headers = request->headers;
         auto& destination = headers.at(":path");
 
-        request->ipAddr = conn->getIPAddr();
+        const auto& config = app->getConfig();
+
+        if (!config.trustXRealIp) {
+            request->ipAddr = conn->getIPAddr();
+        } else {
+            auto header = headers.find("x-real-ip");
+            if (header == headers.end()) {
+                request->ipAddr = conn->getIPAddr();
+            } else {
+                request->ipAddr = header->second;
+            }
+        }
 
         utility::runWithErrorLogging([&]() {
             router.invokeRoute(
@@ -295,12 +308,26 @@ int _detail::onHeaders(
         std::string n((const char*) name, namelen);
         std::string v((const char*) value, valuelen);
 
-        request->headers[n] = v;
 
         if (n == ":method") {
             // TODO: this doesn't really make sense for error handling, but I don't care for now
             request->method = Method::_detail::strToMethod.at(v);
+        } else if (n == "x-real-ip") {
+            // We do not check if we trust x-real-ip here because it doesn't matter
+            // If x-real-ip is maliciously set, we assume a malicious payload and reject
+            // It could be argued that this is unnecessary compute, but /shrug
+            try {
+                asio::ip::make_address(v);
+            } catch (const std::exception& e) {
+                // TODO: it would be nice if there was a safe way to log the cibtebts if the header here, but I don't
+                // think the underlying logger implementation can be assumed to be secure enough to deal with it, much
+                // less the terminal or whatever displays the message.
+                logger::critical("Invalid X-Real-IP. Asio error: {}", e.what());
+                return NGHTTP2_ERR_INVALID_HEADER_BLOCK;
+            }
         }
+
+        request->headers[n] = std::move(v);
     }
     return 0;
 }

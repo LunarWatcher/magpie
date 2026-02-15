@@ -28,7 +28,8 @@ public:
     TCPServer(
         BaseApp* app,
         uint16_t port,
-        unsigned int concurrency
+        unsigned int concurrency,
+        std::string_view bindAddr = "127.0.0.1"
     );
     ~TCPServer();
 

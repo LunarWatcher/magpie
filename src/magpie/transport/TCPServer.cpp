@@ -6,21 +6,24 @@
 #include "magpie/transport/SSLConnection.hpp"
 #include "magpie/utility/ErrorHandler.hpp"
 #include <asio/error_code.hpp>
+#include <asio/ip/address.hpp>
+#include <asio/ip/address_v4.hpp>
 #include <asio/post.hpp>
-#include <future>
 
 namespace magpie::transport {
 
 TCPServer::TCPServer(
     BaseApp* app,
     uint16_t port,
-    unsigned int concurrency
+    unsigned int concurrency,
+    std::string_view bindAddr
 ): 
     ctx(concurrency),
     ipv4Acceptor(
         ctx,
         asio::ip::tcp::endpoint(
-            asio::ip::tcp::v4(), port
+            asio::ip::make_address(bindAddr),
+            port
         )
     ),
     concurrency(concurrency),

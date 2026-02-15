@@ -32,6 +32,8 @@ public:
      *                  development easier without needing to spin up an entire script to generate a dummy SSL cert to
      *                  make HTTP/2 happy. This function is therefore explicitly designed to limit customisability,
      *                  because its use outside development is actively discouraged.
+     *                  It may also have vulnerabilities that are acceptable in a local development environment, but
+     *                  completely unacceptable in a production environment, and will screw you over real fast.
      */
     static SSLConfig fromGeneratedCertificate();
 };

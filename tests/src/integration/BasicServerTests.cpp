@@ -1,6 +1,7 @@
 #include "integration/TestApp.hpp"
 #include "magpie/App.hpp"
 #include "magpie/transfer/StatusCode.hpp"
+#include "magpie/transfer/CompressedResponse.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <cpr/cpr.h>
 #include <cpr/ssl_options.h>
@@ -130,14 +131,15 @@ TEST_CASE("The server should allow arbitrarily large responses") {
     TestApp app;
 
     cpr::Response response;
-    app->route<"/", magpie::Method::Get>([](auto*, magpie::Request&, magpie::Response& res) {
+    app->route<"/", magpie::Method::Get>([](auto*, magpie::Request& req, magpie::Response& res) {
         std::stringstream data;
 
         for (size_t i = 0; i < 20'000'000; ++i) {
             data << "a";
         }
 
-        res = magpie::Response(
+        res = magpie::CompressedResponse(
+            req,
             magpie::Status::OK,
             data.str()
         );
@@ -154,10 +156,25 @@ TEST_CASE("The server should allow arbitrarily large responses") {
         );
         REQUIRE(res.status_code == magpie::Status::OK);
         REQUIRE(res.text.size() == 20'000'000);
-        // TODO: Not sure if this tests what I want it to test. Doesn't look like there's a combined transfer (body +
-        // headers), so not sure if this actually reflects the network size, or if this is just res.text.size() with
-        // extra steps.
         REQUIRE(res.downloaded_bytes == 20'000'000);
+
+        for (auto& ch : res.text) {
+            if (ch != 'a') {
+                // FAIL lets us avoid 20 million assertions, which would just fuck over the assertion stats
+                FAIL("Bad character: " << ch);
+            }
+        }
+    }
+    SECTION("Gzipped") {
+        auto res = app.Get(
+            app.url("/"),
+            cpr::Header {
+                { "Accept-Encoding", "gzip" },
+            }
+        );
+        REQUIRE(res.status_code == magpie::Status::OK);
+        REQUIRE(res.text.size() == 20'000'000);
+        REQUIRE(res.downloaded_bytes < 20'000'000);
 
         for (auto& ch : res.text) {
             if (ch != 'a') {
@@ -169,10 +186,28 @@ TEST_CASE("The server should allow arbitrarily large responses") {
 
 }
 
+TEST_CASE("The server should handle POST data") {
+    TestApp app;
+    app->route<"/", magpie::Method::Post>([](auto*, magpie::Request& req, magpie::Response& res) {
+        res = magpie::Response(
+            magpie::Status::OK,
+            std::move(req.body)
+        );
+    });
+    app.start();
+    std::string body = R"({"message": "owo x3"})";
+    auto res = app.Post(
+        app.url(),
+        cpr::Body { std::string(body) } // Not sure if a copy is strictly necessary here, but it's a
+                                                        // test so I don't care
+    );
+    REQUIRE(res.status_code == 200);
+    REQUIRE(res.text == body);
+}
+
 TEST_CASE("The Request object should expose the IP address") {
     TestApp app;
 
-    cpr::Response response;
     app->route<"/", magpie::Method::Get>([](auto*, magpie::Request& req, magpie::Response& res) {
         res = magpie::Response(
             magpie::Status::OK,
