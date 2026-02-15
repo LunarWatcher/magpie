@@ -1,4 +1,5 @@
 #include "FixedDataAdapter.hpp"
+#include <nghttp2/nghttp2.h>
 
 namespace magpie {
 

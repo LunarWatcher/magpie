@@ -4,7 +4,9 @@ add_library(magpie
     magpie/config/SSLConfig.cpp
 
     magpie/transfer/Response.cpp
+    magpie/transfer/CompressedResponse.cpp
 
+    magpie/transfer/adapters/CompressionDataAdapter.cpp
     magpie/transfer/adapters/FixedDataAdapter.cpp
 
     magpie/transport/TCPServer.cpp

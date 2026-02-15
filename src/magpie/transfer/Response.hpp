@@ -9,6 +9,7 @@
 
 namespace magpie {
 
+struct CompressedResponse;
 struct Response {
     /**
      * The response headers.
@@ -24,8 +25,16 @@ struct Response {
     std::string contentType = "text/plain";
 
     Response();
-    Response(const StatusCode& code, std::string&& body);
-    Response(const StatusCode& code, std::string&& body, std::string&& contentType);
+    Response(
+        const StatusCode& code,
+        std::string&& body,
+        std::string&& contentType = "text/plain"
+    );
+    Response(
+        const StatusCode& code,
+        std::shared_ptr<DataAdapter>&& bodyAdapter,
+        std::string&& contentType
+    );
 
     Response(Response&&) = delete;
     Response(Response&) = delete;
@@ -35,6 +44,7 @@ struct Response {
     void setBody(std::string&& body);
 
     Response& operator=(Response&& other) = default;
+    Response& operator=(CompressedResponse&& other);
 };
 
 }

@@ -41,6 +41,7 @@ struct StatusCode {
     StatusCode(StatusCode&&) = delete;
 
     operator int() const { return statusCode; }
+    operator short() const { return statusCode; }
     operator std::string() const { return std::to_string(statusCode); }
 
     bool operator==(const StatusCode& other) const {
