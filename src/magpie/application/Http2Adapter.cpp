@@ -85,7 +85,6 @@ Http2Adapter::~Http2Adapter() {
             this->callbacks
         );
     }
-    logger::info("Killing connection");
 }
 
 void Http2Adapter::parse(
