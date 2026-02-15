@@ -88,7 +88,7 @@ Http2Adapter::~Http2Adapter() {
 }
 
 void Http2Adapter::parse(
-    const std::array<char, 4096>& buff,
+    const ReadBuffer& buff,
     std::size_t readBytes
 ) {
     nghttp2_session_mem_recv2(

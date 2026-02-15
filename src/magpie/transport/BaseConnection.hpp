@@ -1,5 +1,6 @@
 #pragma once
 
+#include "magpie/application/Adapter.hpp"
 #ifdef _WIN32
 #include <SDKDDKVer.h>
 #endif
@@ -17,7 +18,7 @@ namespace magpie::transport {
 
 class BaseConnection {
 public:
-    std::array<char, 4096> recv;
+    application::ReadBuffer recv;
     // TODO: make the protocol dynamic
     // TODO: Alternatively: Support multiple. ALPN should make this fairly easy to do
     application::Http2Adapter adapter;

@@ -3,7 +3,6 @@
 #include "magpie/application/Methods.hpp"
 #include <string>
 #include <unordered_map>
-
 namespace magpie {
 
 struct Request {
