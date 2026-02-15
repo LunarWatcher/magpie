@@ -35,7 +35,7 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     option(MAGPIE_ENABLE_DEMOS "Whether or not to build demos" ON)
     option(MAGPIE_BUILD_TESTS "Whether or not to build tests" ON)
 else()
-    message (STATUS "alui: Running as a submodule")
+    message (STATUS "magpie: Running as a submodule")
     set(MAGPIE_STANDALONE OFF)
 
     option(MAGPIE_ENABLE_DEMOS "Whether or not to build demos" OFF)
