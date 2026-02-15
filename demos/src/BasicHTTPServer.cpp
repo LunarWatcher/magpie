@@ -2,6 +2,7 @@
 #include "magpie/config/SSLConfig.hpp"
 #include "magpie/data/CommonData.hpp"
 #include "magpie/transfer/Response.hpp"
+#include "magpie/transfer/CompressedResponse.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 
 struct Sessions { };
@@ -67,6 +68,14 @@ int main() {
                 std::format("Your lucky number is {}", v)
             );
         }
+    });
+    app.route<"/echo", magpie::Method::Post>([](Context*, magpie::Request& req, auto& res) {
+        res = magpie::CompressedResponse(
+            req,
+            magpie::Status::OK,
+            std::move(req.body),
+            "text/plain"
+        );
     });
     app.run();
 }

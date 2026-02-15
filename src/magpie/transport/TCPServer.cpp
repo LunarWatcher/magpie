@@ -129,7 +129,8 @@ void TCPServer::start() {
     }
 
     logger::info(
-        "TCPServer listening on http://{}:{}",
+        "TCPServer listening on {}://{}:{}",
+        this->sslCtx.has_value() ? "https" : "http",
         this->ipv4Acceptor.local_endpoint().address().to_string(),
         this->ipv4Acceptor.local_endpoint().port()
     );

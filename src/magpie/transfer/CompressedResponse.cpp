@@ -1,5 +1,4 @@
 #include "CompressedResponse.hpp"
-#include "magpie/logger/Logger.hpp"
 #include "magpie/transfer/adapters/CompressionDataAdapter.hpp"
 #include "magpie/transfer/adapters/FixedDataAdapter.hpp"
 
@@ -20,7 +19,6 @@ CompressedResponse::CompressedResponse(
     auto responseEncoding = Encoding::IDENTITY;
     if (acceptEncoding != req.headers.end()) {
         auto& encoding = acceptEncoding->second;
-        logger::debug("{}", encoding);
 
         if (encoding.contains("gzip")) {
             responseEncoding = Encoding::GZIP;
