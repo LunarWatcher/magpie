@@ -4,6 +4,7 @@
 # - bugprone-narrowing-conversions: There's so many conversions particularly between doubles and floats that it simply isn't feasible to keep up with 
 #       clangd's extra pendantic check. The compiler does the bulk of the useful checks with -Wall
 # - clang-diagnostic-unused-private-field: Maybe useful eventually, but not right now.
+# - portability-template-virtual-member-function: not important
 Checks: >
   -*,
   bugprone-*,
@@ -29,6 +30,7 @@ Checks: >
   -performance-avoid-endl,
   -performance-enum-size,
   -readability-*,
-  -clang-analyzer-cplusplus.NewDeleteLeaks
+  -clang-analyzer-cplusplus.NewDeleteLeaks,
+  -portability-template-virtual-member-function
 
 HeaderFilterRegex: ".*\\/src\\/magpie\\/.*"
