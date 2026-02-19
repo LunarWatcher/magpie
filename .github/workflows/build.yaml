@@ -42,11 +42,6 @@ jobs:
       - name: Install conan
         run: |
           pip install conan
-      - name: Grab conan_provider.cmake
-        run: |
-          mkdir build
-          cd build
-          C:/msys64/usr/bin/wget.exe https://github.com/conan-io/cmake-conan/raw/refs/heads/develop2/conan_provider.cmake
       - name: Build
         run: |
           cd build
@@ -65,11 +60,6 @@ jobs:
       - name: Install conan
         run: |
           pip install conan
-      - name: Grab conan_provider.cmake
-        run: |
-          mkdir build
-          cd build
-          C:/msys64/usr/bin/wget.exe https://github.com/conan-io/cmake-conan/raw/refs/heads/develop2/conan_provider.cmake
       - name: Build
         run: |
           cd build
