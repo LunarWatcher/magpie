@@ -5,18 +5,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-linux:
-    runs-on: ubuntu-latest
-    container: ubuntu:rolling
-    name: Build and test on ubuntu
+  build-ubuntu:
+    strategy:
+      fail-fast: false
+      matrix:
+        os-config: 
+          - os: ubuntu-latest
+            variant: Debug
+            image: ubuntu:rolling
+          - os: ubuntu-latest
+            variant: Release
+            image: ubuntu:rolling
+    runs-on: ${{ matrix.os-config.os }}
+    container: ${{ matrix.os-config.image }}
     steps:
       - name: Install deps
         run: |
           apt update
-          apt install -y libnghttp2-dev libssl-dev libasio-dev gcc g++ \
+          apt install -y libssl-dev gcc g++ make \
             build-essential cmake git python3 python3-pip lcov
+          # Required for Conan
           pip3 install --break-system-packages conan
       - uses: actions/checkout@v6
+      # Necessary because ubuntu:rolling is root
       - name: Fix git ownership
         run: |
           git config --global --add safe.directory $(pwd)
@@ -24,19 +35,27 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CONAN=true -DMAGPIE_COVERAGE=ON
+          cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.os-config.variant }}  -DENABLE_CONAN=ON -DMAGPIE_COVERAGE=ON
           make -j $(nproc)
       - name: Test
         run: |
           cd build
           make -j $(nproc) test
-      - name: Show test coverage
+      - name: Coverage
         run: |
           cd build
           make -j $(nproc) gen-coverage
-  test-windows:
-    runs-on: windows-latest
-    name: Build and test on Windows
+  
+  build-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        os-config: 
+          - os: windows-latest
+            variant: Debug
+          - os: windows-latest
+            variant: Release
+    runs-on: ${{ matrix.os-config.os }}
     steps:
       - uses: actions/checkout@v6
       - name: Install conan
@@ -47,26 +66,7 @@ jobs:
           mkdir build
           cd build
           dir
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CONAN=ON
-          cmake --build . --config Release -j 4
-      - name: Test
-        run: |
-          cd build
-          cmake --build . --target test --config Release -j 4
-  test-windows-debug-because-windows-trash:
-    runs-on: windows-latest
-    name: Build and test on Windows (debug)
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install conan
-        run: |
-          pip install conan
-      - name: Build
-        run: |
-          mkdir build
-          cd build
-          dir
-          cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_CONAN=ON
+          cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.os-config.variant }} -DENABLE_CONAN=ON -DMAGPIE_COVERAGE=ON
           cmake --build . --config Debug -j 4
       - name: Test
         run: |
