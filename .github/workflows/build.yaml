@@ -44,6 +44,7 @@ jobs:
           pip install conan
       - name: Build
         run: |
+          mkdir build
           cd build
           dir
           cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CONAN=ON
@@ -62,6 +63,7 @@ jobs:
           pip install conan
       - name: Build
         run: |
+          mkdir build
           cd build
           dir
           cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_CONAN=ON
