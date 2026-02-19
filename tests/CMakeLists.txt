@@ -1,10 +1,13 @@
 add_executable(tests 
     src/Main.cpp
 
+    src/exception/ErrorHandlerTests.cpp
+
     src/integration/BasicServerTests.cpp
+    src/integration/CompressionTests.cpp
     src/integration/MiddlewareTests.cpp
     src/integration/RouteParamTests.cpp
-    src/integration/CompressionTests.cpp
+    src/integration/ServerErrorHandlerTests.cpp
 
     src/integration/regression/StatusCodeOnSubtreeTests.cpp
 
