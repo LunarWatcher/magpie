@@ -3,7 +3,6 @@
 #include "magpie/AppDecl.hpp"
 #include "magpie/data/CommonData.hpp"
 #include "magpie/dsa/RadixTree.hpp"
-#include "magpie/except/RouteException.hpp"
 #include "magpie/middlewares/MiddlewareProcessor.hpp"
 #include "magpie/routing/BaseRouter.hpp"
 #include "magpie/routing/Compile.hpp"
@@ -85,7 +84,7 @@ public:
         
         if (path.size() == 0 || path[0] != '/') {
             [[unlikely]]
-            throw RouteException("Invalid route supplied");
+            throw std::runtime_error("Invalid route supplied");
         }
 
         std::string_view normPath;
