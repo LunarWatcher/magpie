@@ -33,9 +33,6 @@ public:
     virtual void start() = 0;
 
     virtual void doRead() = 0;
-    virtual void doBulkWrite(
-        const std::string& data
-    ) = 0;
 
     virtual std::string getIPAddr() = 0;
 
@@ -85,23 +82,6 @@ public:
 
     void start() override {
         doRead();
-    }
-
-    void doBulkWrite(
-        const std::string& data
-    ) override {
-        auto self = this->shared_from_this();
-        asio::async_write(
-            self->getSocket(),
-            asio::buffer(data),
-            [](const asio::error_code& err, size_t) {
-                if (err) {
-                    logger::error(
-                        "{}", err.message()
-                    );
-                }
-            }
-        );
     }
 
     std::string getIPAddr() override {

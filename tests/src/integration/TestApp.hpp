@@ -6,7 +6,6 @@
 #include "magpie/data/CommonData.hpp"
 #include <cpr/cpr.h>
 #include <future>
-#include <iostream>
 
 template <magpie::data::IsCommonData CtxType = magpie::data::CommonData>
 struct TestApp {

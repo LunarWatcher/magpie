@@ -37,6 +37,8 @@ public:
         dataStore->app = (BaseApp*) this;
     }
 
+    // Not sure why clangd and/or clang-tidy whines about this being incorrect use; adding ::type breaks the build in
+    // all the combinations of `typename = [typename] std::enable_if[_v]<>[::type]` I could think of
     template <typename = std::enable_if<std::is_trivially_default_constructible_v<ContextType>>>
     App(
         AppConfig&& conf = {}
