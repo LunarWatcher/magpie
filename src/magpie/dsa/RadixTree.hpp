@@ -21,6 +21,8 @@ enum class MatchMode {
 template <typename Value>
 struct Node {
     std::unordered_map<Method::HttpMethod, Value> value;
+    Value catchall;
+
     int weight;
 
     std::vector<std::shared_ptr<Node<Value>>> childNodes;

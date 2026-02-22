@@ -97,33 +97,28 @@ public:
 
         std::visit([&res, &req, ctx, &segments](auto& it) {
             using T = std::decay_t<decltype(it)>;
+            auto* contextApp = static_cast<ContextApp<ContextType>*>(ctx->app);
+            auto* castCtx = static_cast<ContextType*>(ctx);
             if constexpr (std::is_same_v<dsa::FindError, T>) {
-                if (it == dsa::FindError::IllegalMethod) {
-                    res = Response(
-                        Status::MethodNotAllowed,
-                        "405 method not allowed"
-                    );
-                } else if (it == dsa::FindError::NoMatch) {
-                    res = Response(
-                        Status::NotFound,
-                        "404 not found"
-                    );
-                }
+                contextApp->notFoundErrorHandler->onRouteNotFound(castCtx, req, res, it);
             } else {
+                contextApp->errorHandler->tryCall(
+                    castCtx, req, res, [&]() {
+                        auto* route = it.get();
+                        MiddlewareProcessor<ContextType>(
+                            route,
+                            std::vector<Middlewares<ContextType>*> {
+                                contextApp->getMiddlewaresAsPtr(),
+                                route->getMiddlewaresAsPtr(),
+                            },
+                            segments,
+                            castCtx,
+                            req,
+                            res
+                        ).invokeRoute();
 
-                auto* castCtx = static_cast<ContextType*>(ctx);
-                auto* route = it.get();
-                MiddlewareProcessor<ContextType>(
-                    route,
-                    std::vector<Middlewares<ContextType>*> {
-                        static_cast<ContextApp<ContextType>*>(castCtx->app)->getMiddlewaresAsPtr(),
-                        route->getMiddlewaresAsPtr(),
-                    },
-                    segments,
-                    castCtx,
-                    req,
-                    res
-                ).invokeRoute();
+                    }
+                );
             }
         }, callback);
     }

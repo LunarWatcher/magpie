@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magpie/config/AppConfig.hpp"
+#include "magpie/handlers/StatusHandlers.hpp"
 #include "magpie/middlewares/Middleware.hpp"
 #include "magpie/routing/BaseRouter.hpp"
 
@@ -33,8 +34,23 @@ public:
 template <data::IsCommonData ContextType = data::CommonData>
 class ContextApp : public BaseApp {
 public:
+    std::shared_ptr<StatusHandlerNotFound<ContextType>> notFoundErrorHandler 
+        = std::make_shared<StatusHandlerNotFound<ContextType>>();
+    std::shared_ptr<StatusHandler500<ContextType>> errorHandler 
+        = std::make_shared<StatusHandler500<ContextType>>();
+
     ContextApp(AppConfig&& config) : BaseApp(std::move(config)) {}
     virtual ~ContextApp() = default;
+
+    template <typename T>
+    void useNotFoundErrorHandler() {
+        notFoundErrorHandler = std::make_shared<T>();
+    }
+
+    template <typename T>
+    void use500ErrorHandler() {
+        errorHandler = std::make_shared<T>();
+    }
 
     virtual Middlewares<ContextType>* getMiddlewaresAsPtr() = 0;
 };

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "magpie/config/SSLConfig.hpp"
+#include "magpie/handlers/StatusHandlers.hpp"
+#include <memory>
 #include <optional>
 #include <thread>
 
