@@ -313,7 +313,7 @@ int _detail::onHeaders(
             request->method = Method::_detail::strToMethod.at(v);
         } else if (n == "x-real-ip") {
             // We do not check if we trust x-real-ip here because it doesn't matter
-            // If x-real-ip is maliciously set, we assume a malicious payload and reject
+            // If x-real-ip is maliciously set, we assume a malicious payload and reject regardless of what it's set to.
             // It could be argued that this is unnecessary compute, but /shrug
             try {
                 asio::ip::make_address(v);

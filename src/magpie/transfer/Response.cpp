@@ -1,4 +1,5 @@
 #include "Response.hpp"
+#include "magpie/transfer/StatusCode.hpp"
 #include "magpie/transfer/adapters/FixedDataAdapter.hpp"
 #include "CompressedResponse.hpp"
 
@@ -36,6 +37,27 @@ Response& Response::operator=(CompressedResponse&& other) {
     this->contentType = std::move(other.contentType);
 
     return *this;
+}
+
+void Response::redirect(
+    Response& out,
+    std::string&& dest,
+    bool permanent
+) {
+    Response res;
+    res.headers["location"] = std::move(dest);
+    res.code = permanent ? &Status::PermanentRedirect : &Status::TemporaryRedirect;
+    out = std::move(res);
+}
+
+void Response::moved(
+    Response& out,
+    std::string&& dest
+) {
+    Response res;
+    res.headers["location"] = std::move(dest);
+    res.code = &Status::MovedPermanently;
+    out = std::move(res);
 }
 
 }

@@ -10,6 +10,8 @@ add_executable(tests
     src/integration/RouteParamTests.cpp
     src/integration/ServerErrorHandlerTests.cpp
 
+    src/integration/redirects/BasicRedirectTests.cpp
+
     src/integration/regression/StatusCodeOnSubtreeTests.cpp
 
     src/routing/RouteCompilationTests.cpp
