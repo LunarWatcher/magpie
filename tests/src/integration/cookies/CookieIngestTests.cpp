@@ -55,6 +55,10 @@ TEST_CASE("Verify that cookies are received correctly", "[Cookies]") {
         // error)), which makes no fucking sense. 
         // The cert is fine - yes, it's self-signed, but the root class sets verify=0. if it whines here, it should fail
         // in every other test too.
+        // Initially thought it might be some weird conan artefact (conan often disables a fair bit of stuff by
+        // default), but doesn't look like that's the case. Cookies are enabled, and I would expect a proper error if
+        // that was the case. It's definitely on the cpr side though. It never makes it to the server for debug logging
+        // there.
         auto res = app.Get(
             app.url(),
             cpr::Header{

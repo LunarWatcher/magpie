@@ -1,6 +1,5 @@
 #include "magpie/application/formats/Cookie.hpp"
 #include "magpie/error/Result.hpp"
-#include "magpie/logger/Logger.hpp"
 #include "Request.hpp"
 #include <vector>
 #include <sstream>
@@ -22,7 +21,6 @@ Result<std::vector<Cookie>, CookieParseError> Request::parseCookies() const {
     if (headerValue.size() == 0) {
         return ResultType::err(CookieParseError::NoCookies);
     }
-    logger::info("working with {}", headerValue);
     std::stringstream accKey, accValue;
     int state = STATE_KEY;
 
