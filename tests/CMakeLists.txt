@@ -10,6 +10,8 @@ add_executable(tests
     src/integration/RouteParamTests.cpp
     src/integration/ServerErrorHandlerTests.cpp
 
+    src/integration/cookies/CookieIngestTests.cpp
+
     src/integration/redirects/BasicRedirectTests.cpp
 
     src/integration/regression/StatusCodeOnSubtreeTests.cpp
@@ -29,12 +31,7 @@ FetchContent_Declare(
   GIT_TAG v3.12.0
 )
 
-
-FetchContent_Declare(stc
-    GIT_REPOSITORY https://github.com/LunarWatcher/stc
-)
-
-FetchContent_MakeAvailable(Catch2 stc)
+FetchContent_MakeAvailable(Catch2)
 
 find_package(cpr REQUIRED)
 

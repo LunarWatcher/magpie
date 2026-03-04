@@ -81,6 +81,12 @@ if (NOT WIN32 AND MAGPIE_SANITISE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
 endif()
 
+include(FetchContent)
+FetchContent_Declare(stc
+    GIT_REPOSITORY https://github.com/LunarWatcher/stc
+)
+FetchContent_MakeAvailable(stc)
+
 add_subdirectory(src)
 
 if (MAGPIE_BUILD_TESTS)

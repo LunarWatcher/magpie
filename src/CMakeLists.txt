@@ -1,8 +1,11 @@
 add_library(magpie
     magpie/application/Http2Adapter.cpp
 
+    magpie/application/formats/Cookie.cpp
+
     magpie/config/SSLConfig.cpp
 
+    magpie/transfer/Request.cpp
     magpie/transfer/Response.cpp
     magpie/transfer/CompressedResponse.cpp
 
@@ -24,6 +27,7 @@ PUBLIC
     asio::asio
     OpenSSL::SSL
     zlib-ng::zlib-ng
+    stc::stc
 )
 
 # vim:ft=cmake

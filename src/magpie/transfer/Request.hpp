@@ -1,8 +1,11 @@
 #pragma once
 
 #include "magpie/application/Methods.hpp"
+#include "magpie/application/formats/Cookie.hpp"
+#include "magpie/error/Result.hpp"
 #include <string>
 #include <unordered_map>
+#include <vector>
 namespace magpie {
 
 struct Request {
@@ -30,6 +33,8 @@ struct Request {
      * Using the multiple handler for different methods is discouraged, however.
      */
     Method::HttpMethod method;
+
+    Result<std::vector<Cookie>, CookieParseError> parseCookies() const;
 };
 
 }
