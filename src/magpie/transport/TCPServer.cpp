@@ -9,6 +9,7 @@
 #include <asio/ip/address.hpp>
 #include <asio/ip/address_v4.hpp>
 #include <asio/post.hpp>
+#include <openssl/ssl.h>
 
 namespace magpie::transport {
 
@@ -39,6 +40,11 @@ TCPServer::TCPServer(
         SSL_CTX_set_alpn_select_cb(
             ctx.native_handle(),
             application::_detail::onAlpnSelectProto,
+            nullptr
+        );
+        SSL_CTX_set_client_hello_cb(
+            ctx.native_handle(),
+            application::_detail::onClientHello,
             nullptr
         );
         SSL_CTX_set_alpn_protos(

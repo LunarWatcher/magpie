@@ -54,6 +54,8 @@ extern int onAlpnSelectProto(
     unsigned int inLen, void* arg
 );
 
+extern int onClientHello(SSL* ssl, int* al, void* arg);
+
 extern int onStreamClose(
     nghttp2_session *session,
     int32_t stream_id,

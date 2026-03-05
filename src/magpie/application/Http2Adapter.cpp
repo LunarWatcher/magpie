@@ -367,6 +367,26 @@ int _detail::onAlpnSelectProto(
     return SSL_TLSEXT_ERR_OK;
 }
 
+int _detail::onClientHello(SSL* ssl, int* al, void*) {
+    const unsigned char* data;
+    size_t len;
+
+    if (SSL_client_hello_get0_ext(
+            ssl,
+            TLSEXT_TYPE_application_layer_protocol_negotiation,
+            &data,
+            &len
+        ) == 1
+    ) {
+        return SSL_CLIENT_HELLO_SUCCESS;
+    }
+    else
+    {
+        *al = TLS1_AD_NO_APPLICATION_PROTOCOL;
+        return SSL_CLIENT_HELLO_ERROR;
+    }
+}
+
 int _detail::onStreamClose(
     nghttp2_session*,
     int32_t streamId,
