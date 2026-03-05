@@ -90,7 +90,7 @@ public:
     );
     ~Http2Adapter();
 
-    virtual void parse(
+    virtual bool parse(
         const ReadBuffer& buff,
         std::size_t readBytes
     ) override;

@@ -10,7 +10,7 @@ class Adapter {
 public:
     virtual ~Adapter() = default;
 
-    virtual void parse(
+    virtual bool parse(
         const ReadBuffer& buff,
         std::size_t readBytes
     ) = 0;

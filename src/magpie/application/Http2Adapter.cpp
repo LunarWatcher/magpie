@@ -87,7 +87,7 @@ Http2Adapter::~Http2Adapter() {
     }
 }
 
-void Http2Adapter::parse(
+bool Http2Adapter::parse(
     const ReadBuffer& buff,
     std::size_t readBytes
 ) {
@@ -99,6 +99,9 @@ void Http2Adapter::parse(
     nghttp2_session_send(
         this->sess
     );
+
+    return nghttp2_session_want_read(this->sess) == 0
+        && nghttp2_session_want_write(this->sess) == 0;
 }
 
 nghttp2_ssize _detail::onSend(
