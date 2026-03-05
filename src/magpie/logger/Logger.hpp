@@ -47,7 +47,11 @@ inline LoggerConfig& config() {
 template <Level level, class... Args>
 inline void log(const std::format_string<Args...>& fmt, Args&&... args) {
     // TODO: do I add a prefix?
-    config().logger(
+    auto& logger = config().logger;
+    if (!logger) {
+        return;
+    }
+    logger(
         level, std::format(fmt, std::forward<Args>(args)...)
     );
 }
