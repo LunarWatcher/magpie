@@ -61,7 +61,7 @@ TCPServer::TCPServer(
 }
 
 TCPServer::~TCPServer() {
-    this->ctx.stop();
+    stop();
     ipv4Acceptor.close();
 }
 

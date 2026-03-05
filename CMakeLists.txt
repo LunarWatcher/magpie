@@ -34,12 +34,14 @@ if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     option(MAGPIE_ENABLE_DEMOS "Whether or not to build demos" ON)
     option(MAGPIE_BUILD_TESTS "Whether or not to build tests" ON)
+    option(MAGPIE_BUILD_BENCHMARK_SERVER "Whether or not to build the benchmark server" ON)
 else()
     message (STATUS "magpie: Running as a submodule")
     set(MAGPIE_STANDALONE OFF)
 
     option(MAGPIE_ENABLE_DEMOS "Whether or not to build demos" OFF)
     option(MAGPIE_BUILD_TESTS "Whether or not to build tests" OFF)
+    option(MAGPIE_BUILD_BENCHMARK_SERVER "Whether or not to build the benchmark server" OFF)
 endif()
 
 option(MAGPIE_COVERAGE "Whether or not to build with test coverage" OFF)
@@ -52,6 +54,7 @@ message(STATUS "\t- Tests: ${MAGPIE_BUILD_TESTS}")
 message(STATUS "\t- Docs: ${MAGPIE_DOCS}")
 message(STATUS "\t- Sanitising: ${MAGPIE_SANITISE}")
 message(STATUS "\t- Coverage: ${MAGPIE_COVERAGE}")
+message(STATUS "\t- Benchmark server: ${MAGPIE_BUILD_BENCHMARK_SERVER}")
 
 # Used for crypto, and maybe HTTPS eventually:tm:
 find_package(OpenSSL REQUIRED)
@@ -98,6 +101,9 @@ if (MAGPIE_BUILD_TESTS)
 endif()
 if (MAGPIE_ENABLE_DEMOS)
     add_subdirectory(demos)
+endif()
+if (MAGPIE_BUILD_BENCHMARK_SERVER)
+    add_subdirectory(bench)
 endif()
 
 if (MAGPIE_DOCS)
