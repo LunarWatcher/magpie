@@ -29,7 +29,7 @@ public:
         std::shared_ptr<ContextType> dataStore,
         AppConfig&& conf = {}
     ): ContextApp<ContextType>(std::move(conf)),
-        serv(this, conf.port, conf.concurrency),
+        serv(this, this->config.port, this->config.concurrency, this->config.bindAddr),
         dataStore(dataStore),
         router(std::make_shared<routing::Router<ContextType>>()),
         middlewares(std::make_shared<Middlewares<ContextType>>())
