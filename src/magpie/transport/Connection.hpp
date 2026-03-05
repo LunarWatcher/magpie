@@ -26,7 +26,9 @@ public:
         socket(ctx)
     {
     }
-    ~Connection() = default;
+    ~Connection() {
+        socket.close();
+    }
 
     decltype(socket)& getSocket() override { return socket; }
     decltype(socket)& getRawSocket() override { return socket; }
