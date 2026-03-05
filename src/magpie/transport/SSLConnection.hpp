@@ -33,7 +33,9 @@ public:
     {
     }
 
-    ~SSLConnection() = default;
+    ~SSLConnection() {
+        socket.lowest_layer().close();
+    };
 
     SSLSocketWrapper& getSocket() override {
         return socket;

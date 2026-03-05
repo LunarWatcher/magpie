@@ -9,6 +9,7 @@
 #include "magpie/App.hpp"
 #include "magpie/utility/ErrorHandler.hpp"
 #include <openssl/comp.h>
+#include <openssl/tls1.h>
 #include <stdexcept>
 #include <string>
 #include <zlib-ng.h>
@@ -362,7 +363,9 @@ int _detail::onAlpnSelectProto(
     unsigned int inLen, void*
 ) {
     if (auto err = nghttp2_select_alpn(out, outLen, in, inLen); err != 1) {
-        return SSL_TLSEXT_ERR_NOACK;
+        // NOACK is not good enough for some reason, and results in the handshake proceeding anyway.
+        // Not sure why that's the default elsewhere, but whatever.
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
     return SSL_TLSEXT_ERR_OK;
 }
@@ -379,9 +382,7 @@ int _detail::onClientHello(SSL* ssl, int* al, void*) {
         ) == 1
     ) {
         return SSL_CLIENT_HELLO_SUCCESS;
-    }
-    else
-    {
+    } else {
         *al = TLS1_AD_NO_APPLICATION_PROTOCOL;
         return SSL_CLIENT_HELLO_ERROR;
     }

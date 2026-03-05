@@ -69,12 +69,15 @@ public:
             asio::buffer(recv),
             [self](const asio::error_code& ec, size_t bytes) {
                 if (!ec && bytes > 0) {
+                    logger::info("Reading {} bytes", bytes);
                     if (!self->adapter.parse(
                         self->recv,
                         bytes
                     )) {
                         self->doRead();
                     }
+                } else if (ec) {
+                    logger::error("{}", ec.message());
                 }
             }
         );
