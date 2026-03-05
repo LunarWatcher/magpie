@@ -85,7 +85,6 @@ void TCPServer::doAccept() {
                         );
                     }
                 });
-                conn->getRawSocket().close();
                 this->doAccept();
             }
         );
@@ -118,7 +117,6 @@ void TCPServer::doAccept() {
                         );
                     }
                 });
-                conn->getRawSocket().close();
                 this->doAccept();
             }
         );
@@ -139,8 +137,17 @@ void TCPServer::start() {
         this->ipv4Acceptor.local_endpoint().address().to_string(),
         this->ipv4Acceptor.local_endpoint().port()
     );
-    // TODO: is this actually multithreaded?
-    this->ctx.run();
+    std::vector<std::thread> threads;
+    threads.reserve(this->concurrency);
+    for (unsigned int i = 0; i < this->concurrency; ++i) {
+        threads.push_back(std::thread([this]() {
+            this->ctx.run();
+        }));
+    }
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    logger::info("Shutting down...");
 }
 
 void TCPServer::stop() {
