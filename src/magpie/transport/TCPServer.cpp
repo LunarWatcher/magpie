@@ -22,7 +22,7 @@ TCPServer::TCPServer(
     ipv4Acceptor(
         ctx,
         asio::ip::tcp::endpoint(
-            asio::ip::make_address(bindAddr),
+            bindAddr == "0.0.0.0" ? asio::ip::address_v4::any() : asio::ip::make_address(bindAddr),
             port
         )
     ),
