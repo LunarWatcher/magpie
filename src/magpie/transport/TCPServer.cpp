@@ -85,6 +85,7 @@ void TCPServer::doAccept() {
                         );
                     }
                 });
+                conn->getRawSocket().close();
                 this->doAccept();
             }
         );
@@ -117,6 +118,7 @@ void TCPServer::doAccept() {
                         );
                     }
                 });
+                conn->getRawSocket().close();
                 this->doAccept();
             }
         );
