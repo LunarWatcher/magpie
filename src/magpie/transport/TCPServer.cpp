@@ -127,9 +127,9 @@ void TCPServer::start() {
     // Pretty sure this is at least partly wrong. Looks like ctx::run has to be called multiple times to create a thread
     // pool. But then that should correspond to the number of handelrs available, which suggests this is necessary?
     // Asio is fucking weird
-    for (unsigned int i = 0; i < this->concurrency; ++i) {
-        doAccept();
-    }
+    // for (unsigned int i = 0; i < this->concurrency; ++i) {
+    doAccept();
+    // }
 
     logger::info(
         "TCPServer listening on {}://{}:{}",
