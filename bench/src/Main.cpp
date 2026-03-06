@@ -16,8 +16,8 @@ int main() {
             R"({"message": "hi"})"
         );
     });
-    magpie::logger::config().logger = nullptr;
-    std::cout << "Server live at https://0.0.0.0:60696. Logging is disabled" << std::endl;
+    // magpie::logger::config().logger = nullptr;
+    // std::cout << "Server live at https://0.0.0.0:60696. Logging is disabled" << std::endl;
 
     mApp.run();
 }

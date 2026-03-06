@@ -18,19 +18,19 @@ enum class Level {
 inline void defaultHandler(Level level, const std::string_view& message) {
     switch (level) {
     case Level::debug:
-        std::cout << "DEBUG    " << message << std::endl;
+        printf("DEBUG    %.*s\n", static_cast<int>(message.length()), message.data());
         break;
     case Level::info:
-        std::cout << "INFO     " << message << std::endl;
+        printf("INFO     %.*s\n", static_cast<int>(message.length()), message.data());
         break;
     case Level::warning:
-        std::cout << "WARNING  " << message << std::endl;
+        printf("WARNING  %.*s\n", static_cast<int>(message.length()), message.data());
         break;
     case Level::error:
-        std::cout << "ERROR    " << message << std::endl;
+        printf("ERROR    %.*s\n", static_cast<int>(message.length()), message.data());
         break;
     case Level::critical:
-        std::cout << "CRITICAL " << message << std::endl;
+        printf("CRITICAL %.*s\n", static_cast<int>(message.length()), message.data());
         break;
     }
 }
