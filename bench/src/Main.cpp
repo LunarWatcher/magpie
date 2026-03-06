@@ -16,6 +16,9 @@ int main() {
             R"({"message": "hi"})"
         );
     });
+    mApp.route<"/stop", magpie::Method::Get>([](Context* ctx, auto&, auto&) {
+        ctx->app->shutdown();
+    });
     // magpie::logger::config().logger = nullptr;
     // std::cout << "Server live at https://0.0.0.0:60696. Logging is disabled" << std::endl;
 

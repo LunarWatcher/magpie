@@ -20,6 +20,8 @@ public:
 
     virtual const routing::BaseRouter& getRouter() = 0;
 
+    virtual void run() = 0;
+    virtual void shutdown() = 0;
     virtual data::CommonData* getContext() const = 0;
     const AppConfig& getConfig() { return config; }
 };

@@ -65,6 +65,7 @@ public:
 
     virtual ~CommonConnection() {
         worker->workload.fetch_sub(1);
+        // logger::debug("Killing connection. Remaining on node: {}", rem);
     }
 
     virtual NativeType& getRawSocket() = 0; 

@@ -111,8 +111,8 @@ void TCPServer::doAccept() {
             worker->workload.fetch_add(1);
             if (!err) {
                 asio::post(worker->ioContext, [conn]() {
-                    conn->handshake();
                     utility::runWithErrorLogging([&]() {
+                        conn->handshake();
                         conn->start();
                     });
                 });
