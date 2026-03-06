@@ -128,11 +128,12 @@ void TCPServer::doAccept() {
         // TODO: asio has built-in C++20 coroutine support. Figure out how to shoehorn it in here
         // (or figure out how to add C++20 coroutines some other way)
         [worker, conn, this](const asio::error_code& err) {
-            utility::runWithErrorLogging([&]() {
                 if (!err) {
                     asio::post(worker->context, [conn]() {
-                        conn->handshake();
-                        conn->start();
+                        utility::runWithErrorLogging([&]() {
+                            conn->handshake();
+                            conn->start();
+                        });
                     });
                 } else {
                     logger::error(
@@ -140,7 +141,6 @@ void TCPServer::doAccept() {
                         err.message()
                     );
                 }
-            });
             this->doAccept();
         }
     );
