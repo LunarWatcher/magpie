@@ -23,13 +23,13 @@ public:
 
     SSLConnection(
         BaseApp* app,
-        asio::io_context& ctx,
+        internals::Worker* worker,
         asio::ssl::context& sslContext
     ) :
         CommonConnection(
-            app
+            app, worker
         ),
-        socket(ctx, sslContext)
+        socket(worker->ioContext, sslContext)
     {
     }
 

@@ -86,7 +86,7 @@ TCPServer::~TCPServer() {
 
 internals::Worker* TCPServer::getWorker() {
     uint32_t minWorkload = std::numeric_limits<uint32_t>::max();
-    internals::Worker* min;
+    internals::Worker* min = nullptr;
 
     if (this->workerContexts.size() == 0) {
         [[unlikely]]
@@ -102,6 +102,7 @@ internals::Worker* TCPServer::getWorker() {
     }
 
     if (min == nullptr) {
+        [[unlikely]]
         throw std::runtime_error("Panic: Failed to resolve worker");
     }
 
@@ -110,37 +111,41 @@ internals::Worker* TCPServer::getWorker() {
 
 void TCPServer::doAccept() {
     // TODO: I hate this pattern
+    internals::Worker* worker = getWorker();
     std::shared_ptr<BaseConnection> conn;
     if (!this->sslCtx.has_value()) {
-        conn = std::make_shared<Connection>(this->app, coreContext);
+        conn = std::make_shared<Connection>(
+            this->app,
+            worker
+        );
     } else {
         conn = std::make_shared<SSLConnection>(
             this->app,
-            coreContext,
+            worker,
             this->sslCtx.value()
         );
     }
 
-    internals::Worker* worker = getWorker();
 
     conn->asyncAccept(
         ipv4Acceptor,
         // TODO: asio has built-in C++20 coroutine support. Figure out how to shoehorn it in here
         // (or figure out how to add C++20 coroutines some other way)
         [worker, conn, this](const asio::error_code& err) {
-                if (!err) {
-                    asio::post(worker->context, [conn]() {
-                        utility::runWithErrorLogging([&]() {
-                            conn->handshake();
-                            conn->start();
-                        });
+            worker->workload.fetch_add(1);
+            if (!err) {
+                asio::post(worker->ioContext, [conn]() {
+                    utility::runWithErrorLogging([&]() {
+                        conn->handshake();
+                        conn->start();
                     });
-                } else {
-                    logger::error(
-                        "Connection error: {}",
-                        err.message()
-                    );
-                }
+                });
+            } else {
+                logger::error(
+                    "Connection error: {}",
+                    err.message()
+                );
+            }
             this->doAccept();
         }
     );
@@ -159,7 +164,7 @@ void TCPServer::start() {
     threads.reserve(this->concurrency);
     for (unsigned int i = 0; i < this->concurrency; ++i) {
         threads.push_back(std::thread([this, i]() {
-            while (this->workerContexts.at(i)->context.run() != 0) {}
+            while (this->workerContexts.at(i)->ioContext.run() != 0) {}
             logger::debug("Worker thread {} shutting down", i);
         }));
     }
@@ -178,7 +183,7 @@ void TCPServer::stop() {
     }
 
     for (auto& worker : workerContexts) {
-        auto& context = worker->context;
+        auto& context = worker->ioContext;
 
         if (!context.stopped()) {
             context.stop();

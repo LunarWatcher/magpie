@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magpie/application/Adapter.hpp"
+#include "magpie/transport/Worker.hpp"
 #ifdef _WIN32
 #include <SDKDDKVer.h>
 #endif
@@ -53,13 +54,18 @@ class CommonConnection
     : public BaseConnection,
       public std::enable_shared_from_this<CommonConnection<SocketType, NativeType>>
 {
+private:
+    internals::Worker* worker;
 public:
 
     CommonConnection(
-        BaseApp* app
-    ) : BaseConnection(app) {}
+        BaseApp* app,
+        internals::Worker* worker
+    ) : BaseConnection(app), worker(worker) {}
 
-    virtual ~CommonConnection() = default;
+    virtual ~CommonConnection() {
+        worker->workload.fetch_sub(1);
+    }
 
     virtual NativeType& getRawSocket() = 0; 
     virtual SocketType& getSocket() = 0; 

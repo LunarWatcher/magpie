@@ -18,12 +18,12 @@ public:
 
     Connection(
         BaseApp* app,
-        asio::io_context& ctx
+        internals::Worker* worker
     ) :
         CommonConnection(
-            app
+            app, worker
         ),
-        socket(ctx)
+        socket(worker->ioContext)
     {
     }
     ~Connection() = default;

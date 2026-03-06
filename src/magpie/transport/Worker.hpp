@@ -8,11 +8,11 @@
 namespace magpie::internals {
 
 struct Worker {
-    asio::io_context context;
-    asio::executor_work_guard<decltype(context)::executor_type> workGuard;
+    asio::io_context ioContext;
+    asio::executor_work_guard<decltype(ioContext)::executor_type> workGuard;
     std::atomic<uint32_t> workload = 0;
 
-    Worker() : workGuard(asio::make_work_guard(context)) {}
+    Worker() : workGuard(asio::make_work_guard(ioContext)) {}
     Worker(Worker&) = delete;
     Worker(Worker&&) = delete;
 };
