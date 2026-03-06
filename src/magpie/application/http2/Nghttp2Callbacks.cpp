@@ -4,6 +4,7 @@
 #include "magpie/App.hpp"
 #include <asio/buffer.hpp>
 #include <magpie/utility/ErrorHandler.hpp>
+#include <nghttp2/nghttp2.h>
 
 namespace magpie::application {
 
@@ -15,10 +16,16 @@ nghttp2_ssize _detail::onSend(
     void* userData
 ) {
     auto* conn = static_cast<UserData*>(userData)->conn;
-    return conn->write(
+    if (length == 0) {
+        return 0;
+    }
+    auto size = conn->write(
         asio::buffer(data, length)
     );
-
+    if (size == 0) {
+        return NGHTTP2_ERR_CALLBACK_FAILURE;
+    }
+    return 0;
 }
 
 int _detail::onFrame(

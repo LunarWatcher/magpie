@@ -88,7 +88,7 @@ public:
     }
 
     void doRead() override {
-        auto self = this->shared_from_this();
+        std::shared_ptr<BaseConnection> self = this->shared_from_this();
         getSocket().async_read_some(
             asio::buffer(recv),
             [self](const asio::error_code& ec, size_t bytes) {
@@ -100,7 +100,7 @@ public:
                         self->doRead();
                     }
                 } else if (ec) {
-                    logger::error("{}", ec.message());
+                    logger::error("Read failed: {}", ec.message());
                 }
             }
         );
