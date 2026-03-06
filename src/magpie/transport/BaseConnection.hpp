@@ -73,10 +73,18 @@ public:
     size_t write(
         const asio::const_buffer& buff
     ) override {
-        return asio::write(
+        asio::error_code ec;
+        size_t written = asio::write(
             getSocket(),
-            buff
+            buff,
+            ec
         );
+
+        if (ec) {
+            logger::error("{}", ec.message());
+            return 0;
+        }
+        return written;
     }
 
     void doRead() override {
