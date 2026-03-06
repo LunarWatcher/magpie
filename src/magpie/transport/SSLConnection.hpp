@@ -44,6 +44,10 @@ public:
     SSLSocketWrapper::lowest_layer_type& getRawSocket() override {
         return socket.next_layer(); 
     }
+
+    virtual void handshake() override {
+        socket.handshake(SSLSocketWrapper::server);
+    }
 };
 
 }

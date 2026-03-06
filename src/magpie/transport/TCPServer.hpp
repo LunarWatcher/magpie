@@ -1,5 +1,6 @@
 #pragma once
 
+#include "magpie/transport/Worker.hpp"
 #ifdef _WIN32
 #include <SDKDDKVer.h>
 #endif
@@ -14,7 +15,8 @@ namespace magpie::transport {
 
 class TCPServer {
 private:
-    asio::io_context ctx;
+    asio::io_context coreContext;
+    std::vector<std::unique_ptr<internals::Worker>> workerContexts;
     asio::ip::tcp::acceptor ipv4Acceptor;
     std::optional<asio::ssl::context> sslCtx;
 
@@ -24,6 +26,7 @@ private:
     bool die = false;
 
     void doAccept();
+    internals::Worker* getWorker();
 public:
     TCPServer(
         BaseApp* app,

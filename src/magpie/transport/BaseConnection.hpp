@@ -7,7 +7,6 @@
 
 #include "magpie/application/Http2Adapter.hpp"
 #include "magpie/logger/Logger.hpp"
-#include <array>
 #include <memory>
 
 namespace magpie {
@@ -33,6 +32,17 @@ public:
     virtual void start() = 0;
 
     virtual void doRead() = 0;
+
+    /**
+     * Runs a handshake. This only needs to be defined for connections that have a handshake process. There is an empty
+     * default implementation that does nothing.
+     */
+    virtual void handshake() {}
+
+    virtual void asyncAccept(
+        asio::ip::tcp::acceptor& acceptor,
+        const std::function<void(const asio::error_code&)>& callback
+    ) = 0;
 
     virtual std::string getIPAddr() = 0;
 
@@ -80,6 +90,13 @@ public:
                 }
             }
         );
+    }
+
+    virtual void asyncAccept(
+        asio::ip::tcp::acceptor& acceptor,
+        const std::function<void(const asio::error_code&)>& callback
+    ) override {
+        acceptor.async_accept(getRawSocket(), callback);
     }
 
     void start() override {

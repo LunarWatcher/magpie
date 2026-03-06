@@ -4,11 +4,13 @@
 #include "magpie/transport/Connection.hpp"
 #include "magpie/App.hpp"
 #include "magpie/transport/SSLConnection.hpp"
+#include "magpie/transport/Worker.hpp"
 #include "magpie/utility/ErrorHandler.hpp"
 #include <asio/error_code.hpp>
 #include <asio/ip/address.hpp>
 #include <asio/ip/address_v4.hpp>
 #include <asio/post.hpp>
+#include <limits>
 #include <openssl/ssl.h>
 
 namespace magpie::transport {
@@ -19,9 +21,9 @@ TCPServer::TCPServer(
     unsigned int concurrency,
     std::string_view bindAddr
 ): 
-    ctx(concurrency),
+    coreContext(),
     ipv4Acceptor(
-        ctx,
+        coreContext,
         asio::ip::tcp::endpoint(
             asio::ip::make_address(bindAddr),
             port
@@ -30,6 +32,9 @@ TCPServer::TCPServer(
     concurrency(concurrency),
     app(app)
 {
+    if (concurrency < 1) {
+        throw std::runtime_error("You're trying to run nothing");
+    }
     this->sslCtx = app->getConfig().ssl.and_then([](const SSLConfig& ssl) {
         asio::ssl::context ctx(
             asio::ssl::context::sslv23
@@ -59,6 +64,14 @@ TCPServer::TCPServer(
         asio::ip::tcp::acceptor::max_listen_connections,
         err
     );
+
+    // Technically, this pattern means the minimum concurrency is 2
+    for (size_t i = 0; i < concurrency; ++i) {
+        this->workerContexts.push_back(
+            std::make_unique<internals::Worker>()
+        );
+    }
+
     if (err) {
         throw std::runtime_error(
             "Failed to listen on port: " + err.message()
@@ -71,71 +84,70 @@ TCPServer::~TCPServer() {
     ipv4Acceptor.close();
 }
 
+internals::Worker* TCPServer::getWorker() {
+    uint32_t minWorkload = std::numeric_limits<uint32_t>::max();
+    internals::Worker* min;
+
+    if (this->workerContexts.size() == 0) {
+        [[unlikely]]
+        throw std::runtime_error("This should never happen");
+    }
+
+    for (auto& worker : workerContexts) {
+        uint32_t workload = worker->workload.load();
+        if (workload < minWorkload) {
+            minWorkload = workload;
+            min = worker.get();
+        }
+    }
+
+    if (min == nullptr) {
+        throw std::runtime_error("Panic: Failed to resolve worker");
+    }
+
+    return min;
+}
+
 void TCPServer::doAccept() {
     // TODO: I hate this pattern
+    std::shared_ptr<BaseConnection> conn;
     if (!this->sslCtx.has_value()) {
-        // TODO: I do not like this pattern. Fix
-        auto conn = std::make_shared<Connection>(this->app, ctx);
-        ipv4Acceptor.async_accept(
-            conn->getRawSocket(),
-            // TODO: asio has built-in C++20 coroutine support. Figure out how to shoehorn it in here
-            // (or figure out how to add C++20 coroutines some other way)
-            [conn, this](const asio::error_code& err) {
-                utility::runWithErrorLogging([&]() {
-                    if (!err) {
-                        conn->start();
-                    } else {
-                        logger::error(
-                            "Connection error: {}",
-                            err.message()
-                        );
-                    }
-                });
-                this->doAccept();
-            }
-        );
+        conn = std::make_shared<Connection>(this->app, coreContext);
     } else {
-        // TODO: I do not like this pattern. Fix
-        auto conn = std::make_shared<SSLConnection>(
+        conn = std::make_shared<SSLConnection>(
             this->app,
-            ctx,
+            coreContext,
             this->sslCtx.value()
         );
-        // TODO: std::make_shared eradicates type hinting, which makes this signature better:
-        // auto conn = std::shared_ptr<SSLConnection>(
-        //     new SSLConnection(this->app, ctx, this->sslCtx.value())
-        // );
-        // But I vaguely remember there being downsides. Probably worth figuring it out and writing notes on it
-        ipv4Acceptor.async_accept(
-            conn->getRawSocket(),
-            // TODO: asio has built-in C++20 coroutine support. Figure out how to shoehorn it in here
-            // (or figure out how to add C++20 coroutines some other way)
-            [conn, this](const asio::error_code& err) {
-                utility::runWithErrorLogging([&]() {
-                    if (!err) {
-                        conn->getSocket()
-                            .handshake(SSLSocketWrapper::server);
-                        conn->start();
-                    } else {
-                        logger::error(
-                            "Connection error: {}",
-                            err.message()
-                        );
-                    }
-                });
-                this->doAccept();
-            }
-        );
     }
+
+    internals::Worker* worker = getWorker();
+
+    conn->asyncAccept(
+        ipv4Acceptor,
+        // TODO: asio has built-in C++20 coroutine support. Figure out how to shoehorn it in here
+        // (or figure out how to add C++20 coroutines some other way)
+        [worker, conn, this](const asio::error_code& err) {
+            utility::runWithErrorLogging([&]() {
+                if (!err) {
+                    asio::post(worker->context, [conn]() {
+                        conn->handshake();
+                        conn->start();
+                    });
+                } else {
+                    logger::error(
+                        "Connection error: {}",
+                        err.message()
+                    );
+                }
+            });
+            this->doAccept();
+        }
+    );
 }
 
 void TCPServer::start() {
-    // Pretty sure this is at least partly wrong. Looks like ctx::run has to be called multiple times to create a thread
-    // pool. But then that should correspond to the number of handelrs available, which suggests this is necessary?
-    // Asio is fucking weird
-    // for (unsigned int i = 0; i < this->concurrency; ++i) {
     doAccept();
-    // }
 
     logger::info(
         "TCPServer listening on {}://{}:{}",
@@ -146,18 +158,32 @@ void TCPServer::start() {
     std::vector<std::thread> threads;
     threads.reserve(this->concurrency);
     for (unsigned int i = 0; i < this->concurrency; ++i) {
-        threads.push_back(std::thread([this]() {
-            this->ctx.run();
+        threads.push_back(std::thread([this, i]() {
+            while (this->workerContexts.at(i)->context.run() != 0) {}
+            logger::debug("Worker thread {} shutting down", i);
         }));
     }
+    coreContext.run();
+
     for (auto& thread : threads) {
         thread.join();
     }
+
     logger::info("Shutting down...");
 }
 
 void TCPServer::stop() {
-    this->ctx.stop();
+    if (!coreContext.stopped()) {
+        this->coreContext.stop();
+    }
+
+    for (auto& worker : workerContexts) {
+        auto& context = worker->context;
+
+        if (!context.stopped()) {
+            context.stop();
+        }
+    }
 }
 
 uint16_t TCPServer::getPort() {
