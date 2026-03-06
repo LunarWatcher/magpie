@@ -1,5 +1,6 @@
 add_library(magpie
     magpie/application/Http2Adapter.cpp
+    magpie/application/http2/Nghttp2Callbacks.cpp
 
     magpie/application/formats/Cookie.cpp
 

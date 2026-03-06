@@ -35,30 +35,6 @@ TCPServer::TCPServer(
     if (concurrency < 1) {
         throw std::runtime_error("You're trying to run nothing");
     }
-    this->sslCtx = app->getConfig().ssl.and_then([](const SSLConfig& ssl) {
-        asio::ssl::context ctx(
-            asio::ssl::context::sslv23
-        );
-        ctx.use_certificate_chain_file(ssl.certFile);
-        ctx.use_private_key_file(ssl.keyFile, asio::ssl::context::pem);
-
-        SSL_CTX_set_alpn_select_cb(
-            ctx.native_handle(),
-            application::_detail::onAlpnSelectProto,
-            nullptr
-        );
-        SSL_CTX_set_client_hello_cb(
-            ctx.native_handle(),
-            application::_detail::onClientHello,
-            nullptr
-        );
-        SSL_CTX_set_alpn_protos(
-            ctx.native_handle(),
-            (const unsigned char*)"\x02h2",
-            3
-        );
-        return std::optional(std::move(ctx));
-    }) ;
     asio::error_code err;
     ipv4Acceptor.listen(
         asio::ip::tcp::acceptor::max_listen_connections,
@@ -68,7 +44,7 @@ TCPServer::TCPServer(
     // Technically, this pattern means the minimum concurrency is 2
     for (size_t i = 0; i < concurrency; ++i) {
         this->workerContexts.push_back(
-            std::make_unique<internals::Worker>()
+            std::make_unique<internals::Worker>(app->getConfig())
         );
     }
 
@@ -113,7 +89,7 @@ void TCPServer::doAccept() {
     // TODO: I hate this pattern
     internals::Worker* worker = getWorker();
     std::shared_ptr<BaseConnection> conn;
-    if (!this->sslCtx.has_value()) {
+    if (!worker->sslContext.has_value()) {
         conn = std::make_shared<Connection>(
             this->app,
             worker
@@ -122,7 +98,7 @@ void TCPServer::doAccept() {
         conn = std::make_shared<SSLConnection>(
             this->app,
             worker,
-            this->sslCtx.value()
+            worker->sslContext.value()
         );
     }
 
@@ -135,8 +111,8 @@ void TCPServer::doAccept() {
             worker->workload.fetch_add(1);
             if (!err) {
                 asio::post(worker->ioContext, [conn]() {
+                    conn->handshake();
                     utility::runWithErrorLogging([&]() {
-                        conn->handshake();
                         conn->start();
                     });
                 });
@@ -156,7 +132,7 @@ void TCPServer::start() {
 
     logger::info(
         "TCPServer listening on {}://{}:{}",
-        this->sslCtx.has_value() ? "https" : "http",
+        this->app->getConfig().ssl.has_value() ? "https" : "http",
         this->ipv4Acceptor.local_endpoint().address().to_string(),
         this->ipv4Acceptor.local_endpoint().port()
     );
@@ -164,7 +140,15 @@ void TCPServer::start() {
     threads.reserve(this->concurrency);
     for (unsigned int i = 0; i < this->concurrency; ++i) {
         threads.push_back(std::thread([this, i]() {
-            while (this->workerContexts.at(i)->ioContext.run() != 0) {}
+            while (true) {
+                try {
+                    if (this->workerContexts.at(i)->ioContext.run() == 0) {
+                        break;
+                    }
+                } catch (std::exception& e) {
+                    logger::error("Exception in worker: {}", e.what());
+                }
+            }
             logger::debug("Worker thread {} shutting down", i);
         }));
     }

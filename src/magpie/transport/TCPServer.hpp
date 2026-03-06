@@ -18,7 +18,6 @@ private:
     asio::io_context coreContext;
     std::vector<std::unique_ptr<internals::Worker>> workerContexts;
     asio::ip::tcp::acceptor ipv4Acceptor;
-    std::optional<asio::ssl::context> sslCtx;
 
     unsigned int concurrency;
     BaseApp* app;
