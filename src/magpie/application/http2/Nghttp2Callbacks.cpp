@@ -22,10 +22,10 @@ nghttp2_ssize _detail::onSend(
     auto size = conn->write(
         asio::buffer(data, length)
     );
-    if (size == 0) {
+    if (size == std::numeric_limits<size_t>::max()) {
         return NGHTTP2_ERR_CALLBACK_FAILURE;
     }
-    return 0;
+    return size;
 }
 
 int _detail::onFrame(

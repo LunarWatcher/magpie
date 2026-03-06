@@ -82,7 +82,7 @@ public:
 
         if (ec) {
             logger::error("{}", ec.message());
-            return 0;
+            return std::numeric_limits<size_t>::max();
         }
         return written;
     }
