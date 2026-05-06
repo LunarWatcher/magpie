@@ -107,7 +107,7 @@ bool Http2Adapter::parse(
 
 
 bool Http2Adapter::onWriteReady(
-    raven::Connection* conn,
+    raven::Connection*,
     raven::Buffer&
 ) {
     nghttp2_session_send(
