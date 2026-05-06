@@ -2,7 +2,7 @@
 
 #include "magpie/App.hpp"
 #include "magpie/config/AppConfig.hpp"
-#include "magpie/config/SSLConfig.hpp"
+#include "raven/config/SSLConfig.hpp"
 #include "magpie/data/CommonData.hpp"
 #include <cpr/cpr.h>
 #include <future>
@@ -34,22 +34,30 @@ struct TestApp {
         // Used to make the logs somewhat clearer. This should also be made better by me actually getting around to
         // writing a test reporter that isn't shit
         config.port = 0;
+        std::optional<raven::SSLConfig> sslConf = std::nullopt;
         if (autoSsl) {
-            config.ssl = std::optional(
-                magpie::SSLConfig::fromGeneratedCertificate()
+            sslConf.emplace(
+                raven::SSLConfig(
+                    "certs/tests/cert.pem",
+                    "certs/tests/key.pem",
+                    true
+                )
             );
         }
-        isSsl = config.ssl.has_value();
+        isSsl = sslConf.has_value();
 
         app = std::make_shared<magpie::App<CtxType>>(
             ctx,
-            std::move(config)
+            std::move(config),
+            std::move(sslConf)
         );
     }
 
     void start() {
         using namespace std::literals;
         runner = std::async([&]() { this->app->run(); });
+        this->app->sync();
+        magpie::logger::info("Server live");
     }
 
     ~TestApp() {

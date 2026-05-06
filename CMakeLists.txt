@@ -86,9 +86,12 @@ endif()
 
 include(FetchContent)
 FetchContent_Declare(stc
-    GIT_REPOSITORY https://github.com/LunarWatcher/stc
+    GIT_REPOSITORY https://codeberg.org/LunarWatcher/stc
 )
-FetchContent_MakeAvailable(stc)
+FetchContent_Declare(raven
+    GIT_REPOSITORY https://codeberg.org/LunarWatcher/raven
+)
+FetchContent_MakeAvailable(stc raven)
 
 add_subdirectory(src)
 

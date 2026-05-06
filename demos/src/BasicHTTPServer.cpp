@@ -1,5 +1,5 @@
 #include "magpie/App.hpp"
-#include "magpie/config/SSLConfig.hpp"
+#include "raven/config/SSLConfig.hpp"
 #include "magpie/data/CommonData.hpp"
 #include "magpie/transfer/Response.hpp"
 #include "magpie/transfer/CompressedResponse.hpp"
@@ -39,8 +39,12 @@ int main() {
             .port = 8080,
             // Note: fromGeneratedCertificate is for test use only. You should lock this behind a macro or other form of
             // check. Never use this in a production environment.
-            .ssl = magpie::SSLConfig::fromGeneratedCertificate(),
         },
+        raven::SSLConfig {
+            "certs/demos/cert.pem",
+            "certs/demos/key.pem",
+            true
+        }
     };
 
     app.registerGlobalMiddlewares({

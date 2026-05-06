@@ -1,8 +1,8 @@
 #pragma once
 
-#include "magpie/config/SSLConfig.hpp"
-#include "magpie/handlers/StatusHandlers.hpp"
-#include <memory>
+#include <raven/config/SSLConfig.hpp>
+#include <string>
+#include <cstdint>
 #include <optional>
 #include <thread>
 
@@ -13,7 +13,6 @@ struct AppConfig {
     unsigned int concurrency = std::thread::hardware_concurrency();
     std::string bindAddr = "127.0.0.1";
 
-    std::optional<SSLConfig> ssl = std::nullopt;
     /**
      * Whether or not to trust the X-Real-IP header. If true, the X-Real-IP header can override the ipAddr field in the
      * Request object if set. If you set this to true, you MUST ensure that the X-Real-IP can only come from a trusted

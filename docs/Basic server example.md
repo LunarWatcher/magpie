@@ -17,6 +17,7 @@ This context object can be used to keep track of session stores, database thread
 
 ## A basic server
 
+
 ```cpp
 int main() {
     // If you don't create and pass the `ctx`, one will be created for you if the Context object
@@ -27,17 +28,15 @@ int main() {
         ctx,
         magpie::AppConfig {
             .port = 8080,
-            // Note: fromGeneratedCertificate is for test and development use only. You should lock this behind a macro or other form of
-            // check. Never use this in a production environment.
-            //
-            // Due to the use of HTTP/2, a certificate is required if you want to test against browsers,
-            // as browsers do not support HTTP/2 over cleartext. If you're creating an API not used by browsers,
-            // this is much more optional
-            // Note that due to its intended use being in tests and local development, this function provides 0 customisation options,
-            // and will never do so. If you wish to generate certs in production, create your 
-            // own function or script for it; this is outside magpie's scope.
-            .ssl = magpie::SSLConfig::fromGeneratedCertificate(),
         },
+        // Raven is exposed via magpie, as it's the underlying socket library.
+        raven::SSLConfig {
+            "certs/demos/cert.pem",
+            "certs/demos/key.pem",
+            // This signals that raven should generate certificates for you. This must NEVER
+            // be used in production!
+            true
+        }
     };
 
     // In the simplest setup, you can just use lambdas. However, the use of a userdata-like

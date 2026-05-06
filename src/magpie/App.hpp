@@ -8,6 +8,7 @@
 #include "magpie/routing/Compile.hpp"
 #include "magpie/routing/Router.hpp"
 #include "magpie/transport/TCPServer.hpp"
+#include "raven/config/SSLConfig.hpp"
 #include <memory>
 #include <type_traits>
 
@@ -27,9 +28,16 @@ public:
 
     App(
         std::shared_ptr<ContextType> dataStore,
-        AppConfig&& conf = {}
+        AppConfig&& conf = {},
+        std::optional<raven::SSLConfig>&& sslConfig = std::nullopt
     ): ContextApp<ContextType>(std::move(conf)),
-        serv(this, this->config.port, this->config.concurrency, this->config.bindAddr),
+        serv(
+            this,
+            this->config.port,
+            this->config.concurrency,
+            this->config.bindAddr,
+            std::move(sslConfig)
+        ),
         dataStore(dataStore),
         router(std::make_shared<routing::Router<ContextType>>()),
         middlewares(std::make_shared<Middlewares<ContextType>>())
@@ -41,14 +49,15 @@ public:
     // all the combinations of `typename = [typename] std::enable_if[_v]<>[::type]` I could think of
     template <typename = std::enable_if<std::is_trivially_default_constructible_v<ContextType>>>
     App(
-        AppConfig&& conf = {}
-    ): App(std::make_shared<ContextType>(), std::move(conf)) {
+        AppConfig&& conf = {},
+        std::optional<raven::SSLConfig>&& sslConfig = std::nullopt
+    ): App(std::make_shared<ContextType>(), std::move(conf), std::move(sslConfig)) {
 
     }
     ~App() = default;
 
     /**
-     * Adds a route. 
+     * Adds a route.
      *
      * Each call to this method is only allowed to specify one HTTP method. This is because it's considered bad practice
      * to support more than one HTTP method per function call. However, you can still get around this by calling the
@@ -84,6 +93,10 @@ public:
 
     uint16_t getPort() {
         return this->serv.getPort();
+    }
+
+    void sync() {
+        this->serv.sync();
     }
 
     const routing::BaseRouter& getRouter() override {

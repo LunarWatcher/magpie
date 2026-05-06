@@ -1,37 +1,35 @@
 #pragma once
 
-#include "magpie/transport/Worker.hpp"
-#ifdef _WIN32
-#include <SDKDDKVer.h>
-#endif
+#include "magpie/application/Http2Adapter.hpp"
+#include "raven/config/SSLConfig.hpp"
+#include <raven/SocketServer.hpp>
 
-#include <asio.hpp>
-#include <asio/io_context.hpp>
-#include <asio/ssl.hpp>
-
+#include <cstdint>
+#include <string>
+#include <optional>
 
 namespace magpie { class BaseApp; }
 namespace magpie::transport {
 
 class TCPServer {
 private:
-    asio::io_context coreContext;
-    std::vector<std::unique_ptr<internals::Worker>> workerContexts;
-    asio::ip::tcp::acceptor ipv4Acceptor;
-
     unsigned int concurrency;
     BaseApp* app;
 
     bool die = false;
+    bool hasSSL = false;
+    raven::SocketServer serv;
 
-    void doAccept();
-    internals::Worker* getWorker();
+    std::optional<raven::SSLConfig>&& injectALPN(
+        std::optional<raven::SSLConfig>&& sslConfig
+    );
 public:
     TCPServer(
         BaseApp* app,
         uint16_t port,
         unsigned int concurrency,
-        std::string_view bindAddr = "127.0.0.1"
+        const std::string& bindAddr = "127.0.0.1",
+        std::optional<raven::SSLConfig>&& sslConfig = std::nullopt
     );
     ~TCPServer();
 
@@ -39,6 +37,10 @@ public:
     void stop();
 
     uint16_t getPort();
+
+    void sync() {
+        this->serv.waitForStarted();
+    }
 };
 
 }

@@ -4,8 +4,6 @@ add_library(magpie
 
     magpie/application/formats/Cookie.cpp
 
-    magpie/config/SSLConfig.cpp
-
     magpie/transfer/Request.cpp
     magpie/transfer/Response.cpp
     magpie/transfer/CompressedResponse.cpp
@@ -16,8 +14,8 @@ add_library(magpie
     magpie/transport/TCPServer.cpp
 )
 target_include_directories(
-    magpie 
-PUBLIC 
+    magpie
+PUBLIC
     ./
 )
 
@@ -25,7 +23,7 @@ target_link_libraries(
     magpie
 PUBLIC
     libnghttp2::libnghttp2
-    asio::asio
+    raven
     OpenSSL::SSL
     ZLIB::ZLIB
     stc::stc

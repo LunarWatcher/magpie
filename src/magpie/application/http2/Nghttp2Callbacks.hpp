@@ -1,12 +1,13 @@
 #pragma once
 
-#include "magpie/config/SSLConfig.hpp"
 #include <nghttp2/nghttp2.h>
+#include <openssl/crypto.h>
+
 namespace magpie::application::_detail {
 
 extern nghttp2_ssize onSend(
     nghttp2_session* sess,
-    const uint8_t* data, 
+    const uint8_t* data,
     size_t length,
     int, void*
 );
@@ -36,7 +37,7 @@ extern int onFrame(
 
 extern int onAlpnSelectProto(
     SSL* ssl, const unsigned char** out,
-    unsigned char* outLen, const unsigned char* in, 
+    unsigned char* outLen, const unsigned char* in,
     unsigned int inLen, void* arg
 );
 

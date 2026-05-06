@@ -1,13 +1,14 @@
 #include "Http2Adapter.hpp"
 
+#include "magpie/application/http2/Nghttp2Callbacks.hpp"
+
 #include <nghttp2/nghttp2.h>
 #include "magpie/application/Methods.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 #include "magpie/transfer/adapters/DataAdapter.hpp"
-#include "magpie/transport/Connection.hpp"
-#include "magpie/transport/BaseConnection.hpp"
 #include "magpie/App.hpp"
 #include "magpie/utility/ErrorHandler.hpp"
+#include "magpie/logger/Logger.hpp"
 #include <openssl/comp.h>
 #include <openssl/tls1.h>
 #include <stdexcept>
@@ -17,10 +18,8 @@
 
 namespace magpie::application {
 
-Http2Adapter::Http2Adapter(transport::BaseConnection* conn) :
-    app(conn->app),
-    conn(conn)
-{
+Http2Adapter::Http2Adapter(raven::Connection* conn, BaseApp* app)
+    : app(app) {
 
     if (auto result = nghttp2_session_callbacks_new(
         &callbacks
@@ -51,6 +50,7 @@ Http2Adapter::Http2Adapter(transport::BaseConnection* conn) :
     );
 
     data.conn = conn;
+    data.app = app;
     if (auto result = nghttp2_session_server_new(
         &sess,
         callbacks,
@@ -87,20 +87,33 @@ Http2Adapter::~Http2Adapter() {
 }
 
 bool Http2Adapter::parse(
-    const ReadBuffer& buff,
+    const raven::Buffer& buff,
     std::size_t readBytes
 ) {
-    nghttp2_session_mem_recv2(
-        this->sess,
-        (const uint8_t*) buff.data(),
-        readBytes
-    );
+    if (readBytes > 0) {
+        nghttp2_session_mem_recv2(
+            this->sess,
+            (const uint8_t*) buff.data(),
+            readBytes
+        );
+    }
     nghttp2_session_send(
         this->sess
     );
 
     return nghttp2_session_want_read(this->sess) == 0
         && nghttp2_session_want_write(this->sess) == 0;
+}
+
+
+bool Http2Adapter::onWriteReady(
+    raven::Connection* conn,
+    raven::Buffer&
+) {
+    nghttp2_session_send(
+        this->sess
+    );
+    return true;
 }
 
 }

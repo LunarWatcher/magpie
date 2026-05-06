@@ -1,8 +1,7 @@
 #include "Nghttp2Callbacks.hpp"
 #include "magpie/application/Http2Adapter.hpp"
-#include "magpie/transport/BaseConnection.hpp"
 #include "magpie/App.hpp"
-#include <asio/buffer.hpp>
+#include "raven/conn/CommonDefs.hpp"
 #include <magpie/utility/ErrorHandler.hpp>
 #include <nghttp2/nghttp2.h>
 
@@ -19,10 +18,15 @@ nghttp2_ssize _detail::onSend(
     if (length == 0) {
         return 0;
     }
+    int flags = 0;
     auto size = conn->write(
-        asio::buffer(data, length)
+        (const char*) data, length, flags
     );
-    if (size == std::numeric_limits<size_t>::max()) {
+    // std::cout << "wrote " << size << "bytes with flags = " << flags <<  std::endl;
+    if (flags == raven::Connection::WriteFlags::BufferFull) {
+        return NGHTTP2_ERR_WOULDBLOCK;
+    }
+    if (size == 0 || flags != 0) {
         return NGHTTP2_ERR_CALLBACK_FAILURE;
     }
     return size;
@@ -72,7 +76,7 @@ int _detail::onFrame(
             return nv;
         };
 
-        auto app = conn->app;
+        auto* app = ud.app;
         if (app == nullptr) {
             [[unlikely]]
             throw std::runtime_error("Critical developer error");
@@ -90,7 +94,6 @@ int _detail::onFrame(
         // 3 * 2: :status, content-type, and content-encoding, * 2 for buffer
         // 
         // Doing this avoids copies, which is necessary to avoid UB
-        // 
         nva.reserve(6 + response->headers.size());
 
         auto& headers = request->headers;
@@ -99,11 +102,11 @@ int _detail::onFrame(
         const auto& config = app->getConfig();
 
         if (!config.trustXRealIp) {
-            request->ipAddr = conn->getIPAddr();
+            request->ipAddr = conn->getIP();
         } else {
             auto header = headers.find("x-real-ip");
             if (header == headers.end()) {
-                request->ipAddr = conn->getIPAddr();
+                request->ipAddr = conn->getIP();
             } else {
                 request->ipAddr = header->second;
             }
@@ -220,7 +223,6 @@ int _detail::onHeaders(
         std::string n((const char*) name, namelen);
         std::string v((const char*) value, valuelen);
 
-
         if (n == ":method") {
             // TODO: this doesn't really make sense for error handling, but I don't care for now
             request->method = Method::_detail::strToMethod.at(v);
@@ -228,15 +230,8 @@ int _detail::onHeaders(
             // We do not check if we trust x-real-ip here because it doesn't matter
             // If x-real-ip is maliciously set, we assume a malicious payload and reject regardless of what it's set to.
             // It could be argued that this is unnecessary compute, but /shrug
-            try {
-                asio::ip::make_address(v);
-            } catch (const std::exception& e) {
-                // TODO: it would be nice if there was a safe way to log the cibtebts if the header here, but I don't
-                // think the underlying logger implementation can be assumed to be secure enough to deal with it, much
-                // less the terminal or whatever displays the message.
-                logger::critical("Invalid X-Real-IP. Asio error: {}", e.what());
-                return NGHTTP2_ERR_INVALID_HEADER_BLOCK;
-            }
+            // 
+            // TODO: validate (this used to contain the one bit of asio I haven't bothered porting)
         }
 
         request->headers[n] = std::move(v);
@@ -268,7 +263,7 @@ int _detail::onChunkRecv(
 
 int _detail::onAlpnSelectProto(
     SSL*, const unsigned char** out,
-    unsigned char* outLen, const unsigned char* in, 
+    unsigned char* outLen, const unsigned char* in,
     unsigned int inLen, void*
 ) {
     if (auto err = nghttp2_select_alpn(out, outLen, in, inLen); err != 1) {

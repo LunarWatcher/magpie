@@ -45,30 +45,29 @@ jobs:
         run: |
           cd build
           make -j $(nproc) gen-coverage
-  
-  build-windows:
-    strategy:
-      fail-fast: false
-      matrix:
-        os-config: 
-          - os: windows-latest
-            variant: Debug
-          - os: windows-latest
-            variant: Release
-    runs-on: ${{ matrix.os-config.os }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install conan
-        run: |
-          pip install conan
-      - name: Build
-        run: |
-          mkdir build
-          cd build
-          dir
-          cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.os-config.variant }} -DENABLE_CONAN=ON
-          cmake --build . --config Debug -j 4
-      - name: Test
-        run: |
-          cd build
-          cmake --build . --target test --config Debug -j 4
+  # build-windows:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os-config:
+  #         - os: windows-latest
+  #           variant: Debug
+  #         - os: windows-latest
+  #           variant: Release
+  #   runs-on: ${{ matrix.os-config.os }}
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - name: Install conan
+  #       run: |
+  #         pip install conan
+  #     - name: Build
+  #       run: |
+  #         mkdir build
+  #         cd build
+  #         dir
+  #         cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.os-config.variant }} -DENABLE_CONAN=ON
+  #         cmake --build . --config Debug -j 4
+  #     - name: Test
+  #       run: |
+  #         cd build
+  #         cmake --build . --target test --config Debug -j 4

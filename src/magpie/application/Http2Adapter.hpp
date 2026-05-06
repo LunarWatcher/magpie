@@ -3,7 +3,6 @@
 #include "magpie/application/Adapter.hpp"
 #include "magpie/transfer/Request.hpp"
 #include "magpie/transfer/Response.hpp"
-#include "magpie/transport/TCPServer.hpp"
 #include <nghttp2/nghttp2.h>
 
 #include <openssl/ssl.h>
@@ -17,7 +16,8 @@ class BaseConnection;
 namespace magpie::application {
 
 struct UserData {
-    transport::BaseConnection* conn;
+    raven::Connection* conn;
+    BaseApp* app;
 
     /**
      * Maps stream IDs to requests.
@@ -33,19 +33,22 @@ private:
     nghttp2_session_callbacks* callbacks;
 
     BaseApp* app;
-    transport::BaseConnection* conn;
     UserData data;
-
-    void createSslContext();
 public:
     Http2Adapter(
-        transport::BaseConnection* conn
+        raven::Connection* conn,
+        BaseApp* app
     );
     ~Http2Adapter();
 
     virtual bool parse(
-        const ReadBuffer& buff,
+        const raven::Buffer& buff,
         std::size_t readBytes
+    ) override;
+
+    virtual bool onWriteReady(
+        raven::Connection* conn,
+        raven::Buffer&
     ) override;
 };
 

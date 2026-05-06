@@ -10,9 +10,7 @@ class Magpie(ConanFile):
 
     def requirements(self):
         self.requires("libnghttp2/1.66.0")
-        # TODO: sync with whatever ubuntu uses
         self.requires("openssl/3.6.0")
-        self.requires("asio/1.36.0")
         self.requires("zlib/1.3.2")
 
         self.test_requires(
