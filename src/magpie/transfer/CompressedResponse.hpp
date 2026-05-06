@@ -15,7 +15,7 @@ enum class Encoding {
  * Used for a response that should be compressed.
  *
  * Do not use for binary data, or data that is otherwise already compressed. Compressing compressed data is just a waste
- * of compute for no compression ratio. Zlib-ng should avoid the response being significantly bigger (aside a <1%
+ * of compute for no compression ratio. Zlib should avoid the response being significantly bigger (aside a <1%
  * overhead due to zlib header bytes), but there is still extra overhead.
  */
 struct CompressedResponse : public Response {

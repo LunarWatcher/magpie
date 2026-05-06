@@ -27,7 +27,7 @@ PUBLIC
     libnghttp2::libnghttp2
     asio::asio
     OpenSSL::SSL
-    zlib-ng::zlib-ng
+    ZLIB::ZLIB
     stc::stc
 )
 

@@ -9,7 +9,7 @@ CompressionDataAdapter::~CompressionDataAdapter() {
     }
 
     // This is apparently zlib's free function, because the words "free" and "close" were too difficult
-    zng_deflateEnd(&this->stream);
+    deflateEnd(&this->stream);
 }
 
 }

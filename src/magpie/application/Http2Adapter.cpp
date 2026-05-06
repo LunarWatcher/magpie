@@ -11,8 +11,6 @@
 #include <openssl/comp.h>
 #include <openssl/tls1.h>
 #include <stdexcept>
-#include <string>
-#include <zlib-ng.h>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

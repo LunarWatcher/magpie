@@ -21,7 +21,7 @@ struct Worker {
     ) : 
         sslContext(conf.ssl.and_then([](const SSLConfig& ssl) {
             asio::ssl::context ctx(
-                asio::ssl::context::sslv23
+                asio::ssl::context::sslv23_server
             );
             ctx.use_certificate_chain_file(ssl.certFile);
             ctx.use_private_key_file(ssl.keyFile, asio::ssl::context::pem);

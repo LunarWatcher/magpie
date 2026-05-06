@@ -7,7 +7,7 @@
 #include <nghttp2/nghttp2.h>
 #include <stdexcept>
 #include <vector>
-#include <zlib-ng.h>
+#include <zlib.h>
 #include "DataAdapter.hpp"
 
 namespace magpie {
@@ -16,7 +16,7 @@ class CompressionDataAdapter : public DataAdapter {
 protected:
     DataAdapter* readSource;
 
-    zng_stream stream;
+    z_stream stream;
 public:
     static inline int DEFLATE_HEADER = 0;
     static inline int GZIP_HEADER = 16;
@@ -34,11 +34,11 @@ public:
         stream.zalloc = nullptr;
         stream.opaque = nullptr;
 
-        if (zng_deflateInit2(
+        if (deflateInit2(
                 &stream,
                 6,
                 Z_DEFLATED,
-                15 | (gzip ? GZIP_HEADER : DEFLATE_HEADER), 
+                15 | (gzip ? GZIP_HEADER : DEFLATE_HEADER),
                 8,
                 Z_DEFAULT_STRATEGY
         ) != Z_OK) {
@@ -78,7 +78,7 @@ public:
         stream.avail_out = len;
 
         if (
-            zng_deflate(&stream, Z_FULL_FLUSH) != Z_OK
+            deflate(&stream, Z_FULL_FLUSH) != Z_OK
         ) {
             throw std::runtime_error("Failed to deflate");
         }
