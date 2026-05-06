@@ -59,7 +59,6 @@ message(STATUS "\t- Benchmark server: ${MAGPIE_BUILD_BENCHMARK_SERVER}")
 # Used for crypto, and maybe HTTPS eventually:tm:
 find_package(OpenSSL REQUIRED)
 find_package(libnghttp2 REQUIRED)
-find_package(asio REQUIRED)
 find_package(ZLIB REQUIRED)
 
 add_definitions(-DASIO_NO_DEPRECATED=true -DNGHTTP2_NO_SSIZE_T=true)
