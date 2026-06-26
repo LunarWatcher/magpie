@@ -2,7 +2,7 @@
 
 Magpie's built-in logger is intentionally minimal, and not particularly performant. It is, however, designed to be easy to replace. This is also why the built-in logger doesn't contain many features.
 
-Here's an example of replacing the default logger with stc's `minilog`[^1]:
+Here's an example of replacing the default logger with [`minilog`][minilog][^1]:
 ```cpp
 magpie::logger::config().logger = [](auto level, const auto& msg) {
     switch (level) {
@@ -36,3 +36,6 @@ One disadvantage with magpie's logging system is that it cannot currently forwar
 > This also means that, by not using `magpie::logger`, you can use a dedicated logger to directly control specifically magpie's output without affecting the rest of your application, provided your logging library supports this.
 
 [^1]: Minilog is also not particularly performant, likely as slow as magpie's built-in logger, but it is prettier.
+
+
+[minilog]: https://codeberg.org/LunarWatcher/minilog
