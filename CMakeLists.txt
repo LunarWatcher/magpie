@@ -61,7 +61,7 @@ find_package(OpenSSL REQUIRED)
 find_package(libnghttp2 REQUIRED)
 find_package(ZLIB REQUIRED)
 
-add_definitions(-DASIO_NO_DEPRECATED=true -DNGHTTP2_NO_SSIZE_T=true)
+add_definitions(-DNGHTTP2_NO_SSIZE_T=true)
 
 # TODO: not sure how useful this actually is. Looks like the tooling struggles with multithreaded tests
 if (MAGPIE_COVERAGE)
