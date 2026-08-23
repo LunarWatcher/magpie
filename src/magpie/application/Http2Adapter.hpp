@@ -9,10 +9,6 @@
 
 namespace magpie { class BaseApp; }
 
-namespace magpie::transport {
-class BaseConnection;
-}
-
 namespace magpie::application {
 
 struct UserData {

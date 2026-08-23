@@ -1,8 +1,13 @@
 add_library(magpie
+    magpie/config/AppConfig.cpp
+
     magpie/application/Http2Adapter.cpp
     magpie/application/http2/Nghttp2Callbacks.cpp
 
     magpie/application/formats/Cookie.cpp
+
+    magpie/application/Http11Adapter.cpp
+    magpie/application/http11/Http11Parser.cpp
 
     magpie/transfer/Request.cpp
     magpie/transfer/Response.cpp

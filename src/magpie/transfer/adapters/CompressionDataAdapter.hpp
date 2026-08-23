@@ -85,6 +85,8 @@ public:
         size_t outputSize = len - stream.avail_out;
         return outputSize;
     }
+
+    virtual size_t getContentLength() override;
 };
 
 }

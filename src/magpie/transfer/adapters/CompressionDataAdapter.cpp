@@ -12,4 +12,9 @@ CompressionDataAdapter::~CompressionDataAdapter() {
     deflateEnd(&this->stream);
 }
 
+size_t CompressionDataAdapter::getContentLength() {
+    // TODO: how do we know what size the data is?
+    return 0;
+}
+
 }

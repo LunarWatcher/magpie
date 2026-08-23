@@ -1,6 +1,8 @@
 add_executable(tests 
     src/Main.cpp
 
+    src/application/Http11ParserTests.cpp
+
     src/exception/ErrorHandlerTests.cpp
 
     src/integration/BasicServerTests.cpp
@@ -28,7 +30,7 @@ set(CATCH_CONFIG_DEFAULT_REPORTER "explicit" CACHE STRING "" FORCE)
 FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG v3.12.0
+  GIT_TAG v3.15.3
 )
 
 FetchContent_MakeAvailable(Catch2)

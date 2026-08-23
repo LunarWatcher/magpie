@@ -37,10 +37,7 @@ TCPServer::TCPServer(
                 size_t availableBytes
             ) {
                 if (conn->userData == nullptr) {
-                    conn->userData = std::make_shared<application::Http2Adapter>(
-                        conn,
-                        this->app
-                    );
+                    conn->userData = this->app->getConfig().adapterFactory(conn, this->app);
                 }
                 static_pointer_cast<application::Adapter>(
                     conn->userData

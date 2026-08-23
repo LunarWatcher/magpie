@@ -63,7 +63,7 @@ namespace _detail {
  * Contains remappings for HTTP strings to HTTPMethod. This is exclusively meant for internal use, and should not be
  * used anywhere else.
  */
-static inline const std::unordered_map<std::string, HttpMethod> strToMethod {
+static inline const std::unordered_map<std::string_view, HttpMethod> strToMethod {
     { "CONNECT", Connect },
     { "DELETE", Delete },
     { "GET", Get },

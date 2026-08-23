@@ -11,6 +11,10 @@ Result<std::vector<Cookie>, CookieParseError> Request::parseCookies() const {
     constexpr auto STATE_KEY = 0;
     constexpr auto STATE_VALUE = 1;
 
+    // Only one Cookie header is allowed in HTTP/1.1, but not in HTTP/2: https://stackoverflow.com/a/18967872
+    //
+    // We need to change the header storage to handle headers where multiple keys are allowed
+    // (Why does HTTP have to be so unnecessarily convoluted?)
     auto headerIt = this->headers.find("cookie");
     if (headerIt == this->headers.end()) {
         return ResultType::err(CookieParseError::NoCookies);
@@ -65,6 +69,22 @@ Result<std::vector<Cookie>, CookieParseError> Request::parseCookies() const {
         ));
     }
     return ResultType::ok(std::move(out));
+}
+
+void Request::setHeader(
+    std::string key,
+    const std::string& val
+) {
+    // Normalize all headers to lower-case for consistency with HTTP/2
+    std::transform(
+        key.begin(), key.end(),
+        key.begin(),
+        [](const auto& ch) {
+            return std::tolower(ch);
+        }
+    );
+    // TODO: allow for headers with multiple values (notably Cookie (but only under HTTP/2, technically))
+    headers[key] = val;    
 }
 
 }

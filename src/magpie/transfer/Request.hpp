@@ -27,6 +27,16 @@ struct Request {
     std::string ipAddr;
 
     /**
+     * Relative or absolute URI, as specified by the underlying protocol.
+     */
+    std::string uri;
+
+    /**
+     * The raw request path. This is used for routing purposes.
+     */
+    std::string path;
+
+    /**
      * The HTTP method for this request. This is typically inferred by the endpoint, but if you use the same handler for
      * multiple methods, you may need to use this to differentiate between methods.
      *
@@ -35,6 +45,8 @@ struct Request {
     Method::HttpMethod method;
 
     Result<std::vector<Cookie>, CookieParseError> parseCookies() const;
+
+    void setHeader(std::string k, const std::string& val);
 };
 
 }

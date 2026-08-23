@@ -24,6 +24,7 @@ public:
         uint8_t* buf,
         uint32_t* dataFlags
     ) override;
+    virtual size_t getContentLength() override;
 
     size_t getReadOffset() {
         return readOffset;

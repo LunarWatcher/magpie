@@ -1,7 +1,9 @@
 #include "Nghttp2Callbacks.hpp"
 #include "magpie/application/Http2Adapter.hpp"
 #include "magpie/App.hpp"
+#include "magpie/transfer/adapters/FlagCompat.hpp"
 #include "raven/conn/CommonDefs.hpp"
+#include "raven/ip/IP.hpp"
 #include <magpie/utility/ErrorHandler.hpp>
 #include <nghttp2/nghttp2.h>
 
@@ -97,7 +99,7 @@ int _detail::onFrame(
         nva.reserve(6 + response->headers.size());
 
         auto& headers = request->headers;
-        auto& destination = headers.at(":path");
+        request->path = headers.at(":path");
 
         const auto& config = app->getConfig();
 
@@ -114,7 +116,8 @@ int _detail::onFrame(
 
         utility::runWithErrorLogging([&]() {
             router.invokeRoute(
-                destination,
+                // TODO: now that request->path exists, this argument is unnecessary.
+                request->path,
                 app->getContext(),
                 *request,
                 *response
@@ -166,9 +169,14 @@ int _detail::onFrame(
                 return 0;
             }
             // logger::debug("Length/body length: {}/{}", length, res->body.size());
+            uint32_t flags = 0;
             nghttp2_ssize returnLen = (nghttp2_ssize) adapter->getChunk(
-                length, buf, dataFlags
+                length, buf, &flags
             );
+
+            if ((flags & transfer::Flags::FlagEOF) != 0) {
+                *dataFlags |= NGHTTP2_DATA_FLAG_EOF;
+            }
 
             return returnLen;
         };
@@ -230,7 +238,7 @@ int _detail::onHeaders(
             // We do not check if we trust x-real-ip here because it doesn't matter
             // If x-real-ip is maliciously set, we assume a malicious payload and reject regardless of what it's set to.
             // It could be argued that this is unnecessary compute, but /shrug
-            // 
+            //
             // TODO: validate (this used to contain the one bit of asio I haven't bothered porting)
         }
 

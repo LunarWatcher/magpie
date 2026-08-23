@@ -1,4 +1,5 @@
 #include "FixedDataAdapter.hpp"
+#include "magpie/transfer/adapters/FlagCompat.hpp"
 #include <nghttp2/nghttp2.h>
 
 namespace magpie {
@@ -22,11 +23,15 @@ size_t FixedDataAdapter::getChunk(
     );
 
     if (len + readOffset == data.size()) {
-        *dataFlags = NGHTTP2_DATA_FLAG_EOF;
+        *dataFlags = transfer::Flags::FlagEOF;
     } else {
         readOffset += len;
     }
     return len;
+}
+
+size_t FixedDataAdapter::getContentLength() {
+    return this->data.size();
 }
 
 }

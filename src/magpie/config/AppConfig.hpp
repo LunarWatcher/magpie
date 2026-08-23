@@ -1,12 +1,24 @@
 #pragma once
 
+#include "magpie/application/Adapter.hpp"
 #include <raven/config/SSLConfig.hpp>
 #include <string>
 #include <cstdint>
-#include <optional>
 #include <thread>
 
 namespace magpie {
+
+class BaseApp;
+using AdapterFactory = std::function<
+    std::shared_ptr<application::Adapter>(raven::Connection* conn, BaseApp* app)
+>;
+
+std::shared_ptr<application::Adapter> http11Adapter(
+    raven::Connection* conn, BaseApp* app
+);
+std::shared_ptr<application::Adapter> http2Adapter(
+    raven::Connection* conn, BaseApp* app
+);
 
 struct AppConfig {
     uint16_t port = 8080;
@@ -22,6 +34,8 @@ struct AppConfig {
      * \see https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-For#security_and_privacy_concerns
      */
     bool trustXRealIp = false;
+
+    AdapterFactory adapterFactory = &http2Adapter;
 };
 
 

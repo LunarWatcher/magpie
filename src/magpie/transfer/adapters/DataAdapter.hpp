@@ -21,6 +21,7 @@ public:
         uint32_t* dataFlags
     ) = 0;
 
+    virtual size_t getContentLength() = 0;
     virtual ~DataAdapter() = default;
 };
 

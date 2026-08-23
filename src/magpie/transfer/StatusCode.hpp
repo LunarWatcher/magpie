@@ -87,7 +87,7 @@ namespace Status {
     constexpr StatusCode ProxyAuthenticationRequired(407, "Proxy Authentication Required");
     constexpr StatusCode Conflict(409, "Conflict");
     constexpr StatusCode Gone(410, "Gone");
-    constexpr StatusCode PayloadTooLarge(413, "Payload Too Large");
+    constexpr StatusCode ContentTooLarge(413, "Content Too Large");
     constexpr StatusCode URITooLong(414, "URI Too Long");
     constexpr StatusCode UnsupportedMediaType(415, "Unsupported Media Type");
     constexpr StatusCode RangeNotSatisfiable(416, "Range Not Satisfiable");
