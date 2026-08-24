@@ -20,7 +20,7 @@ Part of the goal of the server is to be more flexible in which HTTP implementati
 
 Initially, the goal was to fully separate the parsers as well, though with the inclusion of HTTP/1.1, this is no longer the case. This is also due to nghttp2 turning to AI slop machines, and many libraries in general using AI slop machines.
 
-Beyond support for HTTP, magpie can theoretically support any TCP-based protocol. In the future, this will expand to UDP as well, though this requires upstream changes to raven, the underlying socket library. This is made possible due to the architecture of magpie separating the protocol translation layer from everything else, so it can be hotswapped arbitrarily - with a bit of effort at least.
+Beyond support for HTTP, magpie can theoretically support any TCP-based protocol. In the future, this will expand to UDP as well, though this requires upstream changes to raven, the underlying socket library. This is made possible due to the architecture of magpie separating the protocol translation layer from everything else, so it can be hotswapped arbitrarily - with a bit of effort at least. At some point, a proof-of-concept [gemini protocol](https://geminiprotocol.net/docs/protocol-specification.gmi) (not to be confused with Google's environment-destroying AI slop machine) may be implemented to put that to the test.
 
 ### Data, context, and data
 
