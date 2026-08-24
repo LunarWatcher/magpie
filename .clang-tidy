@@ -26,6 +26,7 @@ Checks: >
   -misc-const-correctness,
   -misc-include-cleaner,
   -misc-no-recursion,
+  -misc-static-assert,
   -misc-use-anonymous-namespace,
   -performance-avoid-endl,
   -performance-enum-size,
