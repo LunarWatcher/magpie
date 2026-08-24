@@ -16,13 +16,13 @@ This is yet another backburner project. It's not expected to be testable for a b
 
 ### HTTP implementations
 
-This library does not seek to implement _any_ parts of the raw HTTP protocol. Other projects have already solved this problem and, assuming the design is flexible enough, means new protocol support is a matter of library support, and adding an adapter. 
+Part of the goal of the server is to be more flexible in which HTTP implementations are supported. To do this, the server core needs to be fully separate from the networking. This was a mistake CrowCpp did, as they both implemented HTTP/1.1 from scratch, [and hard-coded bits of the HTTP/1.1 protocol](https://github.com/CrowCpp/Crow/blob/8236cc320d81c2ddd6053f628cdf08c30b91a780/include/crow/http_response.h#L344) in core logic. Adding HTTP/2 for CrowCpp means ripping out significant amounts of core logic, whereas the goal here is to cause an absolute bare minimum impact in the core codebase for applications using HTTP protocols that were supported before.
 
-Part of the goal of the server is to be more flexible in which HTTP implementations are supported. To do this, the server core needs to be fully separate from the networking. This was a mistake CrowCpp did, as they both implemented HTTP/1.1 from scratch, [and hard-coded bits of the HTTP/1.1 protocol](https://github.com/CrowCpp/Crow/blob/8236cc320d81c2ddd6053f628cdf08c30b91a780/include/crow/http_response.h#L344) in core logic. Adding HTTP/2 for CrowCpp means ripping out significant amounts of core logic, whereas the goal here is to cause an absolute bare minimum impact in the core codebase for applications using HTTP protocols that were supported before. 
+Initially, the goal was to fully separate the parsers as well, though with the inclusion of HTTP/1.1, this is no longer the case. This is also due to nghttp2 turning to AI slop machines, and many libraries in general using AI slop machines.
 
-As an aside, I could not be bothered implementing a HTTP/1.1 parser, and I failed to find a reasonable one, so _only_ HTTP/2 is supported at this time. I'd like to implement HTTP/1.1 support at some point, but I'm not sure if I can be bothered writing a HTTP/1.1 parser from scratch and dealing with all the inevitable bugs from that.
+Beyond support for HTTP, magpie can theoretically support any TCP-based protocol. In the future, this will expand to UDP as well, though this requires upstream changes to raven, the underlying socket library. This is made possible due to the architecture of magpie separating the protocol translation layer from everything else, so it can be hotswapped arbitrarily - with a bit of effort at least.
 
-### Data, context, and data 
+### Data, context, and data
 
 One of the biggest problems with Crow, at least for my use, is that it's heavily disconnected from state. Middlewares do provide some context, but if you need access to various globals (database thread pool, ...), that (AFAIK) relies heavily on globals and/or `std::bind` on functions that take the context as arguments. This is not great for a number of reasons, so managing global context as well as per-call context is a priority.
 
