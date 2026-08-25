@@ -4,6 +4,7 @@
 #include "magpie/config/AppConfig.hpp"
 #include "raven/config/SSLConfig.hpp"
 #include "magpie/data/CommonData.hpp"
+#include "util/TestCaseGenerator.hpp"
 #include <cpr/cpr.h>
 #include <future>
 
@@ -16,24 +17,28 @@ struct TestApp {
     bool isSsl;
 
     std::future<void> runner;
+    test::EngineTestContext* testContext;
 
     template <typename = std::enable_if<
         std::is_trivially_default_constructible_v<CtxType>>
     >
     TestApp(
+        test::EngineTestContext* testContext,
         magpie::AppConfig&& config = {},
         bool autoSsl = true
-    ) : TestApp<CtxType>(std::make_shared<CtxType>(), std::move(config), autoSsl) {
+    ) : TestApp<CtxType>(testContext, std::make_shared<CtxType>(), std::move(config), autoSsl) {
     }
 
     TestApp(
+        test::EngineTestContext* testContext,
         std::shared_ptr<CtxType> ctx,
         magpie::AppConfig&& config = {},
         bool autoSsl = true
-    ) {
+    ) : testContext(testContext) {
         // Used to make the logs somewhat clearer. This should also be made better by me actually getting around to
         // writing a test reporter that isn't shit
         config.port = 0;
+        config.adapterFactory = testContext->adapterFactory;
         std::optional<raven::SSLConfig> sslConf = std::nullopt;
         if (autoSsl) {
             sslConf.emplace(
@@ -91,23 +96,33 @@ struct TestApp {
     }
 
     void injectDefault(cpr::Session& sess) {
-        if (this->isSsl) {
-            sess.SetVerifySsl(false);
-            sess.SetHttpVersion(
-                cpr::HttpVersion {
-                    cpr::HttpVersionCode::VERSION_2_0
+        if (auto ptr = dynamic_cast<test::HttpEngineTestContext*>(this->testContext); testContext != nullptr) {
+            if (this->isSsl) {
+                sess.SetVerifySsl(false);
+            }
+            if (ptr->version == test::HttpVersion::Http2) {
+                if (this->isSsl) {
+                    sess.SetHttpVersion(
+                        cpr::HttpVersion {
+                            cpr::HttpVersionCode::VERSION_2_0
+                        }
+                    );
+                } else {
+                    sess.SetHttpVersion(
+                        cpr::HttpVersion {
+                            cpr::HttpVersionCode::VERSION_2_0_PRIOR_KNOWLEDGE
+                        }
+                    );
+                }
+            }
+            sess.SetTimeout(
+                cpr::Timeout {
+                    std::chrono::seconds(10)
                 }
             );
         } else {
-            sess.SetHttpVersion(
-                cpr::HttpVersion {
-                    cpr::HttpVersionCode::VERSION_2_0_PRIOR_KNOWLEDGE
-                }
-            );
+            FAIL("tried to use injectDefault with non-HTTP test context.");
         }
-        sess.SetTimeout(cpr::Timeout {
-            std::chrono::seconds(10)
-        });
     }
 
     /**

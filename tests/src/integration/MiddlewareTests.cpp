@@ -6,6 +6,7 @@
 #include <string>
 #include <catch2/catch_test_macros.hpp>
 
+namespace {
 
 struct MiddlewareTestContext : public magpie::data::CommonData {
     const std::string constant = "trans rights are human rights";
@@ -35,8 +36,8 @@ public:
 
 };
 
-TEST_CASE("Verify that the context is set as expected") {
-    TestApp<MiddlewareTestContext> app;
+HTTP_ENGINE_TEST_CASE("Verify that the context is set as expected") {
+    TestApp<MiddlewareTestContext> app(context);
 
     app->route<"/", magpie::Method::Get>(
         [](MiddlewareTestContext* ctx, auto&, auto& res) {
@@ -60,9 +61,10 @@ TEST_CASE("Verify that the context is set as expected") {
     REQUIRE(static_cast<MiddlewareTestContext*>(app->getContext())->var == 69);
 }
 
-TEST_CASE("Verify that a single middleware works as expected") {
+HTTP_ENGINE_TEST_CASE("Verify that a single middleware works as expected") {
     auto peekableContext = std::make_shared<MiddlewareTestContext>();
     TestApp<MiddlewareTestContext> app(
+        context,
         peekableContext
     );
 
@@ -143,9 +145,10 @@ TEST_CASE("Verify that a single middleware works as expected") {
     }
 }
 
-TEST_CASE("Verify that local middlewares work") {
+HTTP_ENGINE_TEST_CASE("Verify that local middlewares work") {
     auto peekableContext = std::make_shared<MiddlewareTestContext>();
     TestApp<MiddlewareTestContext> app(
+        context,
         peekableContext
     );
 
@@ -214,4 +217,6 @@ TEST_CASE("Verify that local middlewares work") {
         REQUIRE(peekableContext->var == 69);
         REQUIRE(res.header.contains("after"));
     }
+}
+
 }

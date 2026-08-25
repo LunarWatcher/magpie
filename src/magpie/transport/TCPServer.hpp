@@ -19,10 +19,6 @@ private:
     bool die = false;
     bool hasSSL = false;
     raven::SocketServer serv;
-
-    std::optional<raven::SSLConfig>&& injectALPN(
-        std::optional<raven::SSLConfig>&& sslConfig
-    );
 public:
     TCPServer(
         BaseApp* app,

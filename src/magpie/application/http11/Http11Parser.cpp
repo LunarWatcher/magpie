@@ -227,7 +227,11 @@ void Http11State::populateWriteBuffer() {
             return;
         } else if (chunkFlags == transfer::Flags::FlagEOF) {
             if (state == Http11ParserState::WriteHeaders) {
-                advance(Http11ParserState::WriteBody);
+                if (res->body) {
+                    advance(Http11ParserState::WriteBody);
+                } else {
+                    advance(Http11ParserState::ReadHeader);
+                }
             } else if (adapter->isStreamedAdapter() && state == Http11ParserState::WriteBody) {
                 advance(Http11ParserState::WriteChunkedEnd);
             } else {
@@ -289,6 +293,9 @@ void Http11State::setResponse(const std::shared_ptr<Response>& res) {
         } else {
             ss << "Content-Length: " << res->body->getContentLength() << "\r\n";
         }
+    } else {
+        // Required for GETs that return `3xx`es to not break
+        ss << "Content-Length: " << 0 << "\r\n";
     }
     ss << "\r\n";
 

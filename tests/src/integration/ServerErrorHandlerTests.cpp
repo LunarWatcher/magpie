@@ -3,8 +3,10 @@
 #include "magpie/application/Methods.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 
-TEST_CASE("Fallback route error handler") {
-    TestApp app;
+namespace {
+
+HTTP_ENGINE_TEST_CASE("Fallback route error handler") {
+    TestApp app(context);
 
     app->route<"/", magpie::Method::Get>([](auto*, auto&, auto& res) {
         res = {
@@ -24,4 +26,6 @@ TEST_CASE("Fallback route error handler") {
     INFO(response.url);
     INFO(response.error.message);
     REQUIRE(response.status_code == magpie::Status::InternalServerError);
+}
+
 }

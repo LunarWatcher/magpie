@@ -24,7 +24,7 @@ TCPServer::TCPServer(
             .port = port,
             .ip = bindAddr,
             .sslConfig = std::move(
-                injectALPN(std::move(sslConfig))
+                this->app->getConfig().adapterFactory->withSslConfigExtras(std::move(sslConfig))
             ),
         },
         raven::ServerConfig {
@@ -37,7 +37,7 @@ TCPServer::TCPServer(
                 size_t availableBytes
             ) {
                 if (conn->userData == nullptr) {
-                    conn->userData = this->app->getConfig().adapterFactory(conn, this->app);
+                    conn->userData = this->app->getConfig().adapterFactory->get(conn, this->app);
                 }
                 static_pointer_cast<application::Adapter>(
                     conn->userData
@@ -62,29 +62,6 @@ TCPServer::TCPServer(
 
 TCPServer::~TCPServer() {
     stop();
-}
-
-std::optional<raven::SSLConfig>&& TCPServer::injectALPN(
-    std::optional<raven::SSLConfig>&& sslConfig
-) {
-    if (sslConfig.has_value()) {
-        SSL_CTX_set_alpn_select_cb(
-            sslConfig->getHandle(),
-            application::_detail::onAlpnSelectProto,
-            nullptr
-        );
-        SSL_CTX_set_client_hello_cb(
-            sslConfig->getHandle(),
-            application::_detail::onClientHello,
-            nullptr
-        );
-        SSL_CTX_set_alpn_protos(
-            sslConfig->getHandle(),
-            (const unsigned char*)"\x02h2",
-            3
-        );
-    }
-    return std::move(sslConfig);
 }
 
 void TCPServer::start() {

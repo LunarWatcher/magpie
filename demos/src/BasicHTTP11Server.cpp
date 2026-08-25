@@ -38,9 +38,7 @@ int main() {
         ctx,
         magpie::AppConfig {
             .port = 8080,
-            // Note: fromGeneratedCertificate is for test use only. You should lock this behind a macro or other form of
-            // check. Never use this in a production environment.
-            .adapterFactory = &magpie::http11Adapter,
+            .adapterFactory = std::make_shared<magpie::Http11AdapterFactory>(),
         },
     };
 
@@ -76,6 +74,12 @@ int main() {
             magpie::Status::OK,
             std::move(req.body),
             "text/plain"
+        );
+    });
+    app.route<"/redirect", magpie::Method::Get>([](Context*, magpie::Request&, auto& res) {
+        magpie::Response::moved(
+            res,
+            "/"
         );
     });
     app.run();

@@ -7,8 +7,12 @@
 #include <cpr/ssl_options.h>
 #include <cpr/verbose.h>
 
-TEST_CASE("Test plain routing", "[integration]") {
-    TestApp app;
+#include <util/TestCaseGenerator.hpp>
+
+namespace {
+
+HTTP_ENGINE_TEST_CASE("Test plain routing", "[integration]") {
+    TestApp app(context);
 
     app->route<"/", magpie::Method::Get>([](auto*, auto&, auto& res) {
         res = {
@@ -41,8 +45,8 @@ TEST_CASE("Test plain routing", "[integration]") {
     }
 }
 
-TEST_CASE("Test plain routing without SSL", "[integration]") {
-    TestApp app{{}, false};
+HTTP_ENGINE_TEST_CASE("Test plain routing without SSL", "[integration]") {
+    TestApp app{context, {}, false};
 
     app->route<"/", magpie::Method::Get>([](auto*, auto&, auto& res) {
         res = {
@@ -65,13 +69,12 @@ TEST_CASE("Test plain routing without SSL", "[integration]") {
         REQUIRE(response.status_code == magpie::Status::ImATeapot);
         REQUIRE(response.text == "Good girl :3");
         REQUIRE(response.header.at("content-type") == "text/plain");
-
     }
 }
 
-TEST_CASE("Test argument routing", "[integration]") {
+HTTP_ENGINE_TEST_CASE("Test argument routing", "[integration]") {
     using namespace std::literals;
-    TestApp app;
+    TestApp app(context);
 
     cpr::Response response;
     SECTION("GET") {
@@ -127,8 +130,8 @@ TEST_CASE("Test argument routing", "[integration]") {
     REQUIRE(response.header.at("content-type") == "text/plain");
 }
 
-TEST_CASE("The server should allow arbitrarily large responses") {
-    TestApp app;
+HTTP_ENGINE_TEST_CASE("The server should allow arbitrarily large responses") {
+    TestApp app(context);
 
     cpr::Response response;
     app->route<"/", magpie::Method::Get>([](auto*, magpie::Request& req, magpie::Response& res) {
@@ -188,8 +191,8 @@ TEST_CASE("The server should allow arbitrarily large responses") {
 
 }
 
-TEST_CASE("The server should handle POST data") {
-    TestApp app;
+HTTP_ENGINE_TEST_CASE("The server should handle POST data") {
+    TestApp app(context);
     app->route<"/", magpie::Method::Post>([](auto*, magpie::Request& req, magpie::Response& res) {
         res = magpie::Response(
             magpie::Status::OK,
@@ -207,8 +210,8 @@ TEST_CASE("The server should handle POST data") {
     REQUIRE(res.text == body);
 }
 
-TEST_CASE("The Request object should expose the IP address") {
-    TestApp app;
+HTTP_ENGINE_TEST_CASE("The Request object should expose the IP address") {
+    TestApp app(context);
 
     app->route<"/", magpie::Method::Get>([](auto*, magpie::Request& req, magpie::Response& res) {
         res = magpie::Response(
@@ -225,4 +228,6 @@ TEST_CASE("The Request object should expose the IP address") {
     REQUIRE(
         res.text == "127.0.0.1"
     );
+}
+
 }

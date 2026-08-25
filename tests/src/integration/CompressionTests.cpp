@@ -3,8 +3,10 @@
 #include "magpie/transfer/CompressedResponse.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 
-TEST_CASE("Test compression") {
-    TestApp app;
+namespace {
+
+HTTP_ENGINE_TEST_CASE("Test compression") {
+    TestApp app(context);
 
     app->route<"/", magpie::Method::Get>([](auto*, auto& req, magpie::Response& res) {
         res = magpie::CompressedResponse(
@@ -52,4 +54,6 @@ TEST_CASE("Test compression") {
     }
 
     REQUIRE(res.text == "Rawr x3 nuzzles pounces on you");
+}
+
 }

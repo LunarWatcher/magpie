@@ -2,8 +2,10 @@
 #include "integration/TestApp.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 
-TEST_CASE("Non-existing routes that are part of a subtree of a route that does exist should 404") {
-    TestApp app;
+namespace {
+
+HTTP_ENGINE_TEST_CASE("Non-existing routes that are part of a subtree of a route that does exist should 404") {
+    TestApp app(context);
     app->route<"/some/route", magpie::Method::Get>([](auto*, auto&, magpie::Response& res) {
         res = magpie::Response(
             magpie::Status::OK,
@@ -36,4 +38,6 @@ TEST_CASE("Non-existing routes that are part of a subtree of a route that does e
         auto res = app.Post(app.url("/some"));
         REQUIRE(res.status_code == magpie::Status::NotFound);
     }
+}
+
 }

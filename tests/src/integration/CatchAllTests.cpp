@@ -6,6 +6,8 @@
 #include "magpie/transfer/StatusCode.hpp"
 #include <catch2/catch_test_macros.hpp>
 
+namespace {
+
 struct NotFound : public magpie::StatusHandlerNotFound<magpie::data::CommonData> {
     void onRouteNotFound(
         magpie::data::CommonData*,
@@ -29,8 +31,8 @@ struct CustomErrorMessageHandler : public magpie::StatusHandler500<magpie::data:
     }
 };
 
-TEST_CASE("StatusHandlerNotFound should wrok as expected on standard routing") {
-    TestApp app;
+HTTP_ENGINE_TEST_CASE("StatusHandlerNotFound should wrok as expected on standard routing") {
+    TestApp app(context);
 
     app->useNotFoundErrorHandler<NotFound>();
 
@@ -60,8 +62,8 @@ TEST_CASE("StatusHandlerNotFound should wrok as expected on standard routing") {
 
 }
 
-TEST_CASE("Custom error handler messages should work") {
-    TestApp app;
+HTTP_ENGINE_TEST_CASE("Custom error handler messages should work") {
+    TestApp app(context);
     app->use500ErrorHandler<CustomErrorMessageHandler>();
     app->route<"/", magpie::Method::Get>([](auto*, auto&, auto&) {
         throw std::runtime_error("1337");
@@ -71,4 +73,6 @@ TEST_CASE("Custom error handler messages should work") {
     auto res = app.Get(app.url());
     REQUIRE(res.status_code == magpie::Status::ImATeapot);
     REQUIRE(res.text == "*boop*");
+}
+
 }

@@ -2,8 +2,10 @@
 #include "integration/TestApp.hpp"
 #include "magpie/transfer/Response.hpp"
 
-TEST_CASE("Test type capturing") {
-    TestApp app;
+namespace {
+
+HTTP_ENGINE_TEST_CASE("Test type capturing") {
+    TestApp app(context);
     app->route<"/string/{string}", magpie::Method::Get>(
         [](auto*, auto&, auto& res, std::string_view v) {
             res = magpie::Response(
@@ -103,4 +105,6 @@ TEST_CASE("Test type capturing") {
         INFO(res.error.message);
         REQUIRE(res.status_code == 404);
     }
+}
+
 }

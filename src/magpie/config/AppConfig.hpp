@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magpie/application/Adapter.hpp"
+#include <openssl/core_dispatch.h>
 #include <raven/config/SSLConfig.hpp>
 #include <string>
 #include <cstdint>
@@ -9,16 +10,26 @@
 namespace magpie {
 
 class BaseApp;
-using AdapterFactory = std::function<
-    std::shared_ptr<application::Adapter>(raven::Connection* conn, BaseApp* app)
->;
 
-std::shared_ptr<application::Adapter> http11Adapter(
-    raven::Connection* conn, BaseApp* app
-);
-std::shared_ptr<application::Adapter> http2Adapter(
-    raven::Connection* conn, BaseApp* app
-);
+struct AdapterFactoryStruct {
+    virtual ~AdapterFactoryStruct() = default;
+
+    virtual std::optional<raven::SSLConfig>&& withSslConfigExtras(std::optional<raven::SSLConfig>&& sslConfig) {
+        return std::move(sslConfig);
+    }
+    virtual std::shared_ptr<application::Adapter> get(raven::Connection* conn, BaseApp* app) = 0;
+};
+
+struct Http11AdapterFactory : public AdapterFactoryStruct {
+    virtual std::shared_ptr<application::Adapter> get(raven::Connection* conn, BaseApp* app) override;
+};
+
+struct Http2AdapterFactory : public AdapterFactoryStruct {
+    virtual std::optional<raven::SSLConfig>&& withSslConfigExtras(std::optional<raven::SSLConfig>&& sslConfig) override;
+    virtual std::shared_ptr<application::Adapter> get(raven::Connection* conn, BaseApp* app) override;
+};
+
+using AdapterFactory = std::shared_ptr<AdapterFactoryStruct>;
 
 struct AppConfig {
     uint16_t port = 8080;
@@ -35,7 +46,7 @@ struct AppConfig {
      */
     bool trustXRealIp = false;
 
-    AdapterFactory adapterFactory = &http2Adapter;
+    AdapterFactory adapterFactory = std::make_shared<Http2AdapterFactory>();
 };
 
 

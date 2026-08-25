@@ -2,11 +2,12 @@
 #include "magpie/application/Methods.hpp"
 #include "magpie/application/formats/Cookie.hpp"
 #include <catch2/catch_test_macros.hpp>
-#include <cmath>
 #include <cpr/ssl_options.h>
 
-TEST_CASE("Verify that cookies are received correctly", "[Cookies]") {
-    TestApp app;
+namespace {
+
+HTTP_ENGINE_TEST_CASE("Verify that cookies are received correctly", "[Cookies]") {
+    TestApp app(context);
     app->route<"/", magpie::Method::Get>([](auto*, magpie::Request& req, magpie::Response& res) {
         auto cookieResult = req.parseCookies();
 
@@ -74,4 +75,6 @@ TEST_CASE("Verify that cookies are received correctly", "[Cookies]") {
             "cookies<=>:pleading_face:\n"
             "foxes<=>all\n");
     }
+}
+
 }
