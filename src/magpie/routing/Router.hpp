@@ -12,6 +12,7 @@
 #include "magpie/transfer/Response.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 
+#include <cassert>
 #include <memory>
 #include <string_view>
 #include <variant>
@@ -80,8 +81,10 @@ public:
         Request& req,
         Response& res
     ) const override {
-        // Compact
-        
+        // This will fail if an adapter fails to set the IP address. Only kept as an assertion to make it painfully
+        // obvious in tests
+        assert(req.ipAddr != "");
+        // Compact path segments
         if (path.size() == 0 || path[0] != '/') {
             [[unlikely]]
             throw std::runtime_error("Invalid route supplied");
