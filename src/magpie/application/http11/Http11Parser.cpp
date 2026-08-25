@@ -61,8 +61,9 @@ ServerAction Http11State::read(
             }
             
             std::string method = headerLine.substr(0, methodSep);
-            std::string uri = headerLine.substr(methodSep + 1, uriSep - methodSep);
+            std::string uri = headerLine.substr(methodSep + 1, uriSep - methodSep - 1);
             std::string protoVersion = headerLine.substr(uriSep + 1);
+            std::cout << "\"" << uri << "\"" << std::endl;
 
             if (protoVersion != "HTTP/1.1") {
                 return ServerAction::KillRequest;
@@ -162,67 +163,106 @@ ServerAction Http11State::read(
     return ServerAction::ContinueRead;
 }
 
-size_t Http11State::populateWriteBuffer(raven::Buffer& out) {
-    return 0;
+void Http11State::writeChunk(
+    raven::Connection* conn,
+    int& writeFlags
+) {
+    size_t written = conn->write(
+        writeBuffer.buffer.data() + writeBuffer.written,
+        writeBuffer.available - writeBuffer.written,
+        writeFlags
+    );
+    writeBuffer.written += written;
 }
 
-void Http11State::write(
-    raven::Connection* conn,
-    raven::Buffer& buff
-) {
-    // TODO: This really should not do IO directly. This should be outsourced similar to the HTTP/2 implementation
-    if (
-        state != Http11ParserState::WriteBody
-        && state != Http11ParserState::WriteHeaders
-    ) {
-        return;
-    }
-    do {
+void Http11State::populateWriteBuffer() {
+    const static std::string closeChunkedSegment = "0\r\n\r\n";
+    if (writeBuffer.written >= writeBuffer.available) {
         std::shared_ptr<DataAdapter> adapter;
-
         if (state == Http11ParserState::WriteBody) {
             adapter = res->body;
+        } else if (state == Http11ParserState::WriteChunkedEnd) {
+            std::copy(closeChunkedSegment.begin(), closeChunkedSegment.end(), writeBuffer.buffer.begin());
+            writeBuffer.available = closeChunkedSegment.size();
+            writeBuffer.makeAvailable(closeChunkedSegment.size());
+            advance(Http11ParserState::ReadHeader);
+            return;
         } else {
             adapter = headerOutputAdapter;
         }
 
-        assert(adapter != nullptr);
-        uint32_t flags = 0;
-        size_t writeableChars = adapter->getChunk(
-            buff.size(),
-            (uint8_t*) buff.data(),
-            &flags
+        uint32_t chunkFlags = 0;
+        auto buffSize = adapter->isStreamedAdapter() ? contentBuff.size() : writeBuffer->size();
+        auto* buffPtr = adapter->isStreamedAdapter() ? contentBuff.data() : writeBuffer->data();
+
+        size_t chunkBytes = adapter->getChunk(
+            buffSize,
+            (uint8_t*) buffPtr,
+            &chunkFlags
         );
 
-        if (writeableChars == 0) {
+        if (adapter->isStreamedAdapter()) {
+            // Pro tip: it helps if you RTFM and notice that the spec says hex number and not decimal number :facepaw:
+            std::string size = std::format("{:x}", chunkBytes);
+            std::copy(size.begin(), size.end(), writeBuffer->data());
+            writeBuffer.buffer[size.size()] = '\r';
+            writeBuffer.buffer[size.size() + 1] = '\n';
+            auto dataStart = writeBuffer->data() + size.size() + 2;
+
+            if (chunkBytes != 0) {
+                std::copy(contentBuff.begin(), contentBuff.begin() + chunkBytes, dataStart);
+            } else {
+                advance(Http11ParserState::ReadHeader);
+            }
+
+            dataStart += chunkBytes;
+            *dataStart = '\r';
+            *(dataStart + 1) = '\n';
+
+            chunkBytes += 4 + size.size();
+            std::cout << chunkBytes << std::endl;
+        }
+
+        if (chunkBytes == 0) {
             return;
-        } else if (flags == transfer::Flags::FlagEOF) {
+        } else if (chunkFlags == transfer::Flags::FlagEOF) {
             if (state == Http11ParserState::WriteHeaders) {
                 advance(Http11ParserState::WriteBody);
+            } else if (adapter->isStreamedAdapter() && state == Http11ParserState::WriteBody) {
+                advance(Http11ParserState::WriteChunkedEnd);
             } else {
                 advance(Http11ParserState::ReadHeader);
             }
         }
 
+        writeBuffer.makeAvailable(chunkBytes);
+    }
+}
 
-        int writeFlags;
-        auto size = conn->write(
-            buff, writeableChars, writeFlags
-        );
-
+void Http11State::write(
+    raven::Connection* conn,
+    raven::Buffer&
+) {
+    // TODO: This really should not do IO directly. This should be outsourced similar to the HTTP/2 implementation
+    do {
         if (
-            writeFlags == raven::Connection::WriteFlags::BufferFull
-            || flags == transfer::Flags::FlagEOF
+            state != Http11ParserState::WriteBody
+            && state != Http11ParserState::WriteHeaders
+            && state != Http11ParserState::WriteChunkedEnd
         ) {
-            return;
-        }
-        if (size == 0 || flags != 0) {
-            // TODO: this is probably too nuclear
-            conn->close();
             break;
         }
 
-    } while (true);
+        int writeFlags = 0;
+        this->populateWriteBuffer();
+        this->writeChunk(conn, writeFlags);
+
+        if (
+            writeFlags == raven::Connection::WriteFlags::BufferFull
+        ) {
+            return;
+        }
+    } while (writeBuffer.writeableBytes());
 }
 
 void Http11State::setResponse(const std::shared_ptr<Response>& res) {
@@ -234,10 +274,21 @@ void Http11State::setResponse(const std::shared_ptr<Response>& res) {
        << res->code->statusLine << "\r\n";
 
     for (auto& [k, v] : res->headers) {
+        if (
+            k == "transfer-encoding"
+            || k == "content-length"
+        ) {
+            [[unlikely]]
+            continue;
+        }
         ss << k << ": " << v << "\r\n";
     }
     if (res->body) {
-        ss << "Content-Length: " << res->body->getContentLength() << "\r\n";
+        if (res->body->isStreamedAdapter()) {
+            ss << "Transfer-Encoding: chunked" << "\r\n";
+        } else {
+            ss << "Content-Length: " << res->body->getContentLength() << "\r\n";
+        }
     }
     ss << "\r\n";
 

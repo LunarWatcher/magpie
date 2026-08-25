@@ -19,6 +19,7 @@ enum class Encoding {
  * overhead due to zlib header bytes), but there is still extra overhead.
  */
 struct CompressedResponse : public Response {
+public:
     CompressedResponse(
         const Request& req,
         const StatusCode& code,

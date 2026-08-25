@@ -87,6 +87,7 @@ public:
     }
 
     virtual size_t getContentLength() override;
+    virtual bool isStreamedAdapter() override { return true; }
 };
 
 }

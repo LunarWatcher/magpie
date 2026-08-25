@@ -28,7 +28,7 @@ One of the biggest problems with Crow, at least for my use, is that it's heavily
 
 ### Sane standards
 
-HTTPS and compression are both core parts of the internet at this point, so they're both bundled automatically. OpenSSL is already planned to be used for secure cryptographic random anyway.
+HTTPS and compression are both core parts of the internet at this point, so they're both bundled automatically.
 
 ## Requirements
 

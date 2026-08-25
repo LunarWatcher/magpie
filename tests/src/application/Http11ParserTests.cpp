@@ -1,6 +1,11 @@
+#include "magpie/transfer/CompressedResponse.hpp"
+#include "magpie/transfer/Response.hpp"
+#include "magpie/transfer/StatusCode.hpp"
 #include "raven/conn/CommonDefs.hpp"
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 
+#include <iostream>
 #include <magpie/application/http11/Http11Parser.hpp>
 
 namespace {

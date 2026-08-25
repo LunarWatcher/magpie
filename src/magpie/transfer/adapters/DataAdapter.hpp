@@ -15,14 +15,29 @@ namespace magpie {
  */
 class DataAdapter {
 public:
+    virtual ~DataAdapter() = default;
+
     virtual size_t getChunk(
         size_t len,
         uint8_t* buf,
         uint32_t* dataFlags
     ) = 0;
 
+    /**
+     * Whether or not the adapter is streamed, meaning the length can't be determined ahead of time.
+     *
+     * This flag has different implications for different protocols. Protocols that don't need to know the length ahead
+     * of time can disregard this flag.
+     * For protocols that can switch between streamed and fixed length bodies, this can be used to determine if the
+     * fixed length or streamed method should be used.
+     */
+    virtual bool isStreamedAdapter() { return false; }
+
+    /**
+     * Returns the length of the content, provided isStreamedAdapter == false.
+     * When true, this should always return 0.
+     */
     virtual size_t getContentLength() = 0;
-    virtual ~DataAdapter() = default;
 };
 
 }

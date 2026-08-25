@@ -6,6 +6,7 @@
 #include "raven/conn/CommonDefs.hpp"
 #include "raven/conn/Connection.hpp"
 
+#include <cmath>
 #include <memory>
 #include <sstream>
 
@@ -23,6 +24,8 @@ enum class Http11ParserState {
     ReadBody,
     WriteHeaders,
     WriteBody,
+
+    WriteChunkedEnd,
 };
 
 enum class ServerAction {
@@ -36,6 +39,23 @@ enum class ServerAction {
      * This MUST result in the termination of the connection.
      */
     KillRequest
+};
+
+struct WriteBuffer {
+    raven::Buffer buffer;
+    size_t available = 0;
+    size_t written = 0;
+
+    void makeAvailable(size_t available) {
+        this->available = available;
+        this->written = 0;
+    }
+
+    raven::Buffer* operator->() { return &buffer; }
+
+    size_t writeableBytes() {
+        return available - written;
+    }
 };
 
 struct Http11State {
@@ -55,8 +75,25 @@ private:
 
     std::shared_ptr<FixedDataAdapter> headerOutputAdapter;
 
+    static_assert(raven::WindowSize == 16'384,
+        "If the buffer size changes, the logic here may break (at least until C++26)"
+    );
+    constexpr static inline int contentBuffSize = raven::WindowSize
+        - 4 // 2x CRLF
+        - 5; // up to 5 digits for the size
+        // TODO: log10 is constexpr in C++26
+        // TODO: log16*, the string part is base16, not base10
+        // - (std::floor(std::log10(raven::WindowSize)) + 1);
+    static inline thread_local std::array<char, contentBuffSize> contentBuff;
+
+    WriteBuffer writeBuffer;
+
     void advance(Http11ParserState nextState);
-    size_t populateWriteBuffer(raven::Buffer& out);
+    void populateWriteBuffer();
+    void writeChunk(
+        raven::Connection* conn,
+        int& writeFlags
+    );
 public:
     std::shared_ptr<Request> req;
     std::shared_ptr<Response> res;
