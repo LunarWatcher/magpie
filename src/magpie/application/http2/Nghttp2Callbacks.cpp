@@ -1,4 +1,5 @@
 #include "Nghttp2Callbacks.hpp"
+#include "magpie/application/Common.hpp"
 #include "magpie/application/Http2Adapter.hpp"
 #include "magpie/App.hpp"
 #include "magpie/transfer/adapters/FlagCompat.hpp"
@@ -101,18 +102,7 @@ int _detail::onFrame(
         auto& headers = request->headers;
         request->path = headers.at(":path");
 
-        const auto& config = app->getConfig();
-
-        if (!config.trustXRealIp) {
-            request->ipAddr = conn->getIP();
-        } else {
-            auto header = headers.find("x-real-ip");
-            if (header == headers.end()) {
-                request->ipAddr = conn->getIP();
-            } else {
-                request->ipAddr = header->second;
-            }
-        }
+        common::setIpAddr(app, conn, request);
 
         utility::runWithErrorLogging([&]() {
             router.invokeRoute(

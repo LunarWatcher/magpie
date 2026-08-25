@@ -1,6 +1,7 @@
 #include "Http11Adapter.hpp"
 
 #include "magpie/App.hpp"
+#include "magpie/application/Common.hpp"
 #include "magpie/utility/ErrorHandler.hpp"
 
 namespace magpie::application {
@@ -39,6 +40,7 @@ bool Http11Adapter::parse(
                     req->ipAddr = header->second;
                 }
             }
+            common::setIpAddr(app, conn, req);
             auto res = std::make_shared<Response>();
 
             utility::runWithErrorLogging([&]() {
