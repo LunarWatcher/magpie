@@ -58,6 +58,11 @@ struct StatusCode {
     }
 };
 
+/**
+ * Defines HTTP status constants.
+ *
+ * For other protocols, define new namespaces instead of using this one.
+ */
 namespace Status {
     constexpr StatusCode Continue(100, "Continue");
     constexpr StatusCode SwitchingProtocols(101, "Switching Protocols");
