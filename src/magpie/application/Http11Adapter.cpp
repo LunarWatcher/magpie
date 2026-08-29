@@ -29,17 +29,6 @@ bool Http11Adapter::parse(
             const auto& router = app->getRouter();
 
             auto& req = this->state.req;
-            const auto& config = app->getConfig();
-            if (!config.trustXRealIp) {
-                req->ipAddr = conn->getIP();
-            } else {
-                auto header = req->headers.find("x-real-ip");
-                if (header == req->headers.end()) {
-                    req->ipAddr = conn->getIP();
-                } else {
-                    req->ipAddr = header->second;
-                }
-            }
             common::setIpAddr(app, conn, req);
             auto res = std::make_shared<Response>();
 
