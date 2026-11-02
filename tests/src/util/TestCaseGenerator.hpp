@@ -42,6 +42,7 @@ struct EngineTestFixture {
         };
         testCase(&ctx);
     }
+    #ifndef MAGPIE_DISABLE_HTTP2
     void withHttp2() {
         HttpEngineTestContext ctx {
             HttpVersion::Http2,
@@ -49,6 +50,7 @@ struct EngineTestFixture {
         };
         testCase(&ctx);
     }
+    #endif
 
     virtual void testCase(
         EngineTestContext* context
@@ -57,6 +59,7 @@ struct EngineTestFixture {
 
 }
 
+#ifndef MAGPIE_DISABLE_HTTP2
 #define INTERNAL_HTTP_ENGINE_TEST_CASE(TestIdentifier, Name, ...)       \
     struct TestIdentifier : public test::EngineTestFixture {            \
         virtual void testCase(test::EngineTestContext* context) override; \
@@ -68,6 +71,16 @@ struct EngineTestFixture {
         withHttp2();                                                    \
     }                                                                   \
     void TestIdentifier::testCase(test::EngineTestContext* context)
+#else
+#define INTERNAL_HTTP_ENGINE_TEST_CASE(TestIdentifier, Name, ...)       \
+    struct TestIdentifier : public test::EngineTestFixture {            \
+        virtual void testCase(test::EngineTestContext* context) override; \
+    };                                                                  \
+    TEST_CASE_METHOD(TestIdentifier, "HTTP/1.1: " Name, "[http11]" __VA_ARGS__) { \
+        withHttp11();                                                   \
+    }                                                                   \
+    void TestIdentifier::testCase(test::EngineTestContext* context)
+#endif
 
 #define HTTP_ENGINE_TEST_CASE(Name, ...)                \
     INTERNAL_HTTP_ENGINE_TEST_CASE(                     \

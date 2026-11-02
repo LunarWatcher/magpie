@@ -19,6 +19,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+set(MAGPIE_DISABLE_HTTP2 "Whether or not to disable nghttp2 (AI slop dependency)" ON)
+
 if (NOT ENABLE_CONAN)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 endif()
@@ -58,11 +60,16 @@ message(STATUS "\t- Benchmark server: ${MAGPIE_BUILD_BENCHMARK_SERVER}")
 
 # Used for crypto, and maybe HTTPS eventually:tm:
 find_package(OpenSSL REQUIRED)
-find_package(libnghttp2 REQUIRED)
+if (MAGPIE_DISABLE_HTTP2)
+    find_package(libnghttp2 REQUIRED)
+    add_definitions(-DNGHTTP2_NO_SSIZE_T=true)
+
+    set(MAGPIE_NGHTTP2_LIBRARIES libnghttp2::libnghttp2)
+else()
+    set(MAGPIE_NGHTTP2_LIBRARIES "")
+endif()
+
 find_package(ZLIB REQUIRED)
-
-add_definitions(-DNGHTTP2_NO_SSIZE_T=true)
-
 # TODO: not sure how useful this actually is. Looks like the tooling struggles with multithreaded tests
 if (MAGPIE_COVERAGE)
     string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)" CMAKE_CXX_COMPILER_VERSION_REGEX_MATCH  ${CMAKE_CXX_COMPILER_VERSION})

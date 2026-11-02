@@ -1,7 +1,9 @@
 #include "AppConfig.hpp"
 #include "magpie/application/Http11Adapter.hpp"
+#ifndef MAGPIE_DISABLE_HTTP2
 #include "magpie/application/Http2Adapter.hpp"
 #include "magpie/application/http2/Nghttp2Callbacks.hpp"
+#endif
 
 namespace magpie {
 
@@ -11,6 +13,7 @@ std::shared_ptr<application::Adapter> Http11AdapterFactory::get(
     return std::make_shared<application::Http11Adapter>(conn, app);
 }
 
+#ifndef MAGPIE_DISABLE_HTTP2
 std::shared_ptr<application::Adapter> Http2AdapterFactory::get(
     raven::Connection* conn, BaseApp* app
 ) {
@@ -37,5 +40,6 @@ std::optional<raven::SSLConfig>&& Http2AdapterFactory::withSslConfigExtras(std::
     }
     return std::move(sslConfig);
 }
+#endif
 
 }

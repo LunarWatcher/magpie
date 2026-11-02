@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef MAGPIE_DISABLE_HTTP2
+#error "HTTP/2 was included while HTTP/2 is disabled"
+#endif
+
 #include <nghttp2/nghttp2.h>
 #include <openssl/crypto.h>
 

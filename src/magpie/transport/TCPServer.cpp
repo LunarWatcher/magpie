@@ -1,6 +1,4 @@
 #include "TCPServer.hpp"
-#include "magpie/application/Http2Adapter.hpp"
-#include "magpie/application/http2/Nghttp2Callbacks.hpp"
 #include "magpie/logger/Logger.hpp"
 #include "raven/SocketServer.hpp"
 #include <magpie/App.hpp>

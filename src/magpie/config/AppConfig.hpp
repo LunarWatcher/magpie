@@ -24,10 +24,12 @@ struct Http11AdapterFactory : public AdapterFactoryStruct {
     virtual std::shared_ptr<application::Adapter> get(raven::Connection* conn, BaseApp* app) override;
 };
 
+#ifndef MAGPIE_DISABLE_HTTP2
 struct Http2AdapterFactory : public AdapterFactoryStruct {
     virtual std::optional<raven::SSLConfig>&& withSslConfigExtras(std::optional<raven::SSLConfig>&& sslConfig) override;
     virtual std::shared_ptr<application::Adapter> get(raven::Connection* conn, BaseApp* app) override;
 };
+#endif
 
 using AdapterFactory = std::shared_ptr<AdapterFactoryStruct>;
 
@@ -46,7 +48,13 @@ struct AppConfig {
      */
     bool trustXRealIp = false;
 
-    AdapterFactory adapterFactory = std::make_shared<Http2AdapterFactory>();
+    AdapterFactory adapterFactory = std::make_shared<
+#ifndef MAGPIE_DISABLE_HTTP2
+        Http2AdapterFactory
+#else
+        Http11AdapterFactory
+#endif
+    >();
 };
 
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "magpie/application/Http2Adapter.hpp"
 #include "raven/config/SSLConfig.hpp"
 #include <raven/SocketServer.hpp>
 
