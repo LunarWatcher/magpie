@@ -34,9 +34,10 @@ HTTPS and compression are both core parts of the internet at this point, so they
 
 * C++23 compiler
 * CMake
-* `libnghttp2-dev libssl-dev`
+* `libssl-dev zlib-dev`
+* Optional (required when compiling with `-DMAGPIE_DISABLE_HTTP2=OFF`): `libnghttp2-dev`
     * Note: `libnghttp2-dev` currently doesn't work on Linux Mint due to the package being out of date.
-    * Another dependency, [raven](https://codeberg.org/LunarWatcher/raven) is bundled with magpie.
+* Another dependency, [raven](https://codeberg.org/LunarWatcher/raven) is bundled with magpie.
 
 ## License
 
