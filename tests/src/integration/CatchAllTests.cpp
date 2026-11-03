@@ -31,7 +31,7 @@ struct CustomErrorMessageHandler : public magpie::StatusHandler500<magpie::data:
     }
 };
 
-HTTP_ENGINE_TEST_CASE("StatusHandlerNotFound should wrok as expected on standard routing") {
+HTTP_ENGINE_TEST_CASE("StatusHandlerNotFound should work as expected on standard routing") {
     TestApp app(context);
 
     app->useNotFoundErrorHandler<NotFound>();

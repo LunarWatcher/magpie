@@ -1,6 +1,5 @@
 #pragma once
 
-#include "magpie/data/CommonData.hpp"
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -38,6 +37,10 @@ struct FixedString {
     constexpr ConstString toConstString() const;
 
     constexpr auto c_str() const -> char const* { return std::data(data); }
+
+    constexpr auto operator==(const std::string_view& other) const {
+        return other == std::string_view{data.data(), N};
+    }
 };
 
 template <std::size_t N>
@@ -71,9 +74,10 @@ struct ConstString {
         return FixedString<N>(str + Offset);
     }
 
-    constexpr void operator=(const ConstString& rhs) {
+    constexpr ConstString& operator=(const ConstString& rhs) noexcept {
         this->str = rhs.str;
         this->size = rhs.size;
+        return *this;
     }
 
     constexpr char operator[](size_t idx) const {
@@ -140,6 +144,7 @@ struct TypeInfo : public std::false_type {
 template<>
 struct TypeInfo<"{int}"> {
     using type = int64_t;
+    static constexpr inline int weight = 2000;
     static constexpr type convert(const std::string_view& v) {
         type out;
         std::from_chars(v.data(), v.data() + v.size(), out);
@@ -150,8 +155,20 @@ struct TypeInfo<"{int}"> {
 template<>
 struct TypeInfo<"{string}"> {
     using type = std::string_view;
+    static constexpr inline int weight = 1000;
     static constexpr type convert(const std::string_view& v) {
-        return v.back() == '/' ? 
+        return v.size() != 0 && v.back() == '/' ?
+            v.substr(0, v.size() - 1)
+            : v;
+    }
+};
+
+template<>
+struct TypeInfo<"{path}"> {
+    using type = std::string_view;
+    static constexpr inline int weight = 500;
+    static constexpr type convert(const std::string_view& v) {
+        return v.size() != 0 && v.back() == '/' ?
             v.substr(0, v.size() - 1)
             : v;
     }
@@ -159,6 +176,7 @@ struct TypeInfo<"{string}"> {
 
 constexpr static inline ConstString INT_VALUE("{int}", 6);
 constexpr static inline ConstString STRING_VALUE("{string}", 9);
+constexpr static inline ConstString PATH_VALUE("{path}", 7);
 
 template <FixedString s, size_t matched, size_t params>
 constexpr void parse(std::array<ConstString, params>& out, size_t i = 0) {
@@ -167,7 +185,7 @@ constexpr void parse(std::array<ConstString, params>& out, size_t i = 0) {
     } else {
         if (i >= s.size) {
             return;
-        } 
+        }
         if (s[i] == '{') {
             constexpr auto constStr = s.toConstString();
             if (startsWithAtOffset(constStr, INT_VALUE, i)) {
@@ -176,8 +194,13 @@ constexpr void parse(std::array<ConstString, params>& out, size_t i = 0) {
             } else if (startsWithAtOffset(constStr, STRING_VALUE, i)) {
                 out.at(matched) = STRING_VALUE;
                 parse<s, matched + 1, params>(out, i + 8);
+            } else if (startsWithAtOffset(constStr, PATH_VALUE, i)) {
+                out.at(matched) = PATH_VALUE;
+                if (matched + 1 != params || i + 8 < s.size) {
+                    throw "{path} is only allowed as the last component";
+                }
             } else {
-                throw "invalid";
+                throw "Invalid type";
             }
         } else {
             parse<s, matched, params>(out, i + 1);
@@ -226,6 +249,9 @@ constexpr void parseForIndices(
             } else if (startsWithAtOffset(constStr, STRING_VALUE, i)) {
                 std::get<matched>(out)  = {STRING_VALUE, slashIndex};
                 parseForIndices<s, matched + 1, params>(out, newSlashIndex, i + 8);
+            } else if (startsWithAtOffset(constStr, PATH_VALUE, i)) {
+                // No further iteration allowed
+                std::get<matched>(out)  = {PATH_VALUE, slashIndex};
             } else {
                 throw "invalid";
             }

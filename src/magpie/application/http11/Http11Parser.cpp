@@ -3,7 +3,6 @@
 #include "magpie/transfer/adapters/FlagCompat.hpp"
 
 #include <cassert>
-#include <iostream>
 #include <string>
 #include <sstream>
 #include <string_view>
@@ -63,7 +62,6 @@ ServerAction Http11State::read(
             std::string method = headerLine.substr(0, methodSep);
             std::string uri = headerLine.substr(methodSep + 1, uriSep - methodSep - 1);
             std::string protoVersion = headerLine.substr(uriSep + 1);
-            std::cout << "\"" << uri << "\"" << std::endl;
 
             if (protoVersion != "HTTP/1.1") {
                 return ServerAction::KillRequest;
@@ -220,7 +218,6 @@ void Http11State::populateWriteBuffer() {
             *(dataStart + 1) = '\n';
 
             chunkBytes += 4 + size.size();
-            std::cout << chunkBytes << std::endl;
         }
 
         if (chunkBytes == 0) {

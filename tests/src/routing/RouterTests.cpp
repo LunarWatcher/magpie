@@ -45,7 +45,7 @@ TEST_CASE("Path normalisation", "[Router]") {
             { { "/?whatever" }, {"/", "?whatever"}, "Simple params are separated" },
             { { "/whatever?test/whatever" }, {"/whatever", "?test/whatever"}, "Params with slash don't fuck the system" },
             { { "/whatever???test/whatever" }, {"/whatever", "???test/whatever"}, "Double question marks is not this system's problem" },
-        }, 
+        },
         [&](const auto& data) {
             std::string_view normPath, rawGetArgs;
             data.forward(

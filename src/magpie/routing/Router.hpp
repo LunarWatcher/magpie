@@ -10,7 +10,6 @@
 #include "magpie/routing/Route.hpp"
 #include "magpie/transfer/Request.hpp"
 #include "magpie/transfer/Response.hpp"
-#include "magpie/transfer/StatusCode.hpp"
 
 #include <cassert>
 #include <memory>
@@ -51,19 +50,32 @@ public:
         }
     }
 
-    constexpr std::vector<std::string_view> pathToComponents(const std::string_view& path) const {
+    constexpr std::vector<std::string_view> pathToComponents(
+        const std::string_view& path,
+        size_t max = 0
+    ) const {
         size_t next;
         size_t start = 0;
         std::vector<std::string_view> out {
             "/"
         };
-        while ((next = path.find('/', start + 1)) != std::string::npos) {
+        while (
+            (next = path.find('/', start + 1)) != std::string::npos
+        ) {
             if (next - start == 1) { // `/segment//whatever`
                 start = next;
             } else if (next != start) { // /[test/] (selection in brackets)
-                out.push_back(path.substr(start + 1, (next - start - 1)));
+                // Note: this causes an underflow, but the logic is still fine.
+                // n > 18 quadrillion or whatever the fuck will never be true (if your path has 18 quadrillion
+                // components, wtf are you even doing?)
+                if (out.size() >= max - 2) {
+                    out.push_back(path.substr(start + 1));
+                    start = path.size() + 2;
+                } else {
+                    out.push_back(path.substr(start + 1, (next - start - 1)));
+                    start = next;
+                }
                 out.push_back("/");
-                start = next;
             }
         }
 
@@ -95,8 +107,17 @@ public:
         normalisePath(path, normPath, rawGetArgs);
         auto segments = this->pathToComponents(normPath);
 
+        size_t processedSegments = 0;
         // TODO: handle query params
-        auto callback = this->routes.getRoute(segments, req.method);
+        auto callback = this->routes.getRoute(
+            segments,
+            req.method,
+            processedSegments
+        );
+
+        if (processedSegments != segments.size()) {
+            segments = this->pathToComponents(normPath, processedSegments);
+        }
 
         std::visit([&res, &req, ctx, &segments](auto& it) {
             using T = std::decay_t<decltype(it)>;

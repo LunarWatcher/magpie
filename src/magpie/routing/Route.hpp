@@ -29,7 +29,6 @@ struct Route : public BaseRoute<ContextType> {
         return std::tuple {
             TypeInfo<
                 FixedString<typeTuples.at(I).first.size - 1>(typeTuples.at(I).first)
-                // "{string}"
             >::convert(
                 requestedPath.at(
                     std::get<1>(typeTuples.at(I))

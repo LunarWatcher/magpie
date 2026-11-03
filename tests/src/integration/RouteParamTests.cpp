@@ -1,6 +1,7 @@
 #include "catch2/catch_test_macros.hpp"
 #include "integration/TestApp.hpp"
 #include "magpie/transfer/Response.hpp"
+#include "util/Assertions.hpp"
 
 namespace {
 
@@ -104,6 +105,38 @@ HTTP_ENGINE_TEST_CASE("Test type capturing") {
         auto res = app.Get(app.url("/int/-69.420"));
         INFO(res.error.message);
         REQUIRE(res.status_code == 404);
+    }
+}
+
+HTTP_ENGINE_TEST_CASE("{path} routing should work", "[url-path]") {
+    TestApp app(context);
+    app->route<"/path/{path}", magpie::Method::Get>(
+        [](auto*, auto&, auto& res, std::string_view path) {
+            res = magpie::Response(
+                magpie::Status::OK,
+                std::string(path)
+            );
+        }
+    );
+
+    app.start();
+
+    SECTION("Well-defined routes") {
+        auto res = app.Get(app.url("/path/subpath"));
+        REQUIRE_OK_TEXT(res, "subpath");
+
+        res = app.Get(app.url("/path/subpath/subsubpath"));
+        REQUIRE_OK_TEXT(res, "subpath/subsubpath");
+
+        res = app.Get(app.url("/path/subpath/subsubpath//subsubpath"));
+            REQUIRE_OK_TEXT(res, "subpath/subsubpath//subsubpath");
+    }
+
+    SECTION("Null path") {
+        auto res = app.Get(app.url("/path/"));
+        REQUIRE_OK_TEXT(res, "");
+        res = app.Get(app.url("/path"));
+        REQUIRE_OK_TEXT(res, "");
     }
 }
 

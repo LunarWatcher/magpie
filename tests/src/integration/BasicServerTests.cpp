@@ -2,6 +2,7 @@
 #include "magpie/App.hpp"
 #include "magpie/transfer/StatusCode.hpp"
 #include "magpie/transfer/CompressedResponse.hpp"
+#include "util/Assertions.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <cpr/cpr.h>
 #include <cpr/ssl_options.h>
@@ -228,6 +229,76 @@ HTTP_ENGINE_TEST_CASE("The Request object should expose the IP address") {
     REQUIRE(
         res.text == "127.0.0.1"
     );
+}
+
+HTTP_ENGINE_TEST_CASE("Route handling should allow /test to match /test/") {
+    TestApp app(context);
+
+    app->route<"/", magpie::Method::Get>([](auto*, magpie::Request&, magpie::Response& res) {
+        res = magpie::Response(
+            magpie::Status::OK,
+            "Good girl from /"
+        );
+    });
+    app->route<"/test/", magpie::Method::Get>([](auto*, magpie::Request&, magpie::Response& res) {
+        static size_t hit = 0;
+        res = magpie::Response(
+            magpie::Status::OK,
+            std::format(
+                "Good girl from /test/ (count = {})",
+                ++hit
+            )
+        );
+    });
+
+    app.start();
+
+    auto res = app.Get(
+        app.url("/")
+    );
+    REQUIRE_OK_TEXT(res, "Good girl from /");
+
+    res = app.Get(app.url("/test/"));
+    REQUIRE_OK_TEXT(res, "Good girl from /test/ (count = 1)");
+
+    res = app.Get(app.url("/test"));
+    REQUIRE_OK_TEXT(res, "Good girl from /test/ (count = 2)");
+}
+
+HTTP_ENGINE_TEST_CASE("Route handling should allow /test to match /test/ if and only if /test is undefined") {
+    TestApp app(context);
+
+    app->route<"/", magpie::Method::Get>([](auto*, magpie::Request&, magpie::Response& res) {
+        res = magpie::Response(
+            magpie::Status::OK,
+            "Good girl from /"
+        );
+    });
+    app->route<"/test", magpie::Method::Get>([](auto*, magpie::Request&, magpie::Response& res) {
+        res = magpie::Response(
+            magpie::Status::OK,
+            "Good girl from /test with padding for good measure"
+        );
+    });
+    app->route<"/test/", magpie::Method::Get>([](auto*, magpie::Request&, magpie::Response& res) {
+        res = magpie::Response(
+            magpie::Status::OK,
+            "Good girl from /test/ with different padding for good measure"
+        );
+    });
+
+    app.start();
+
+    auto res = app.Get(
+        app.url("/")
+    );
+    REQUIRE_OK_TEXT(res, "Good girl from /");
+
+    res = app.Get(app.url("/test"));
+    REQUIRE_OK_TEXT(res, "Good girl from /test with padding for good measure");
+
+    res = app.Get(app.url("/test/"));
+    REQUIRE_OK_TEXT(res, "Good girl from /test/ with different padding for good measure");
 }
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magpie/application/Methods.hpp"
+#include "magpie/logger/Logger.hpp"
 #include "magpie/routing/Compile.hpp"
 
 #include <variant>
@@ -55,16 +56,12 @@ struct StandardNode : public Node<Value> {
     }
 };
 
-template <typename Value, typename NodeType>
+template <typename Value, routing::FixedString Type>
 struct TemplateNode : public Node<Value> {
+    using TI = routing::TypeInfo<Type>;
+    
     TemplateNode() {
-        if constexpr (std::is_same_v<NodeType, std::string_view>) {
-            this->weight = 1000;
-        } else if constexpr (std::is_same_v<NodeType, int64_t>) {
-            this->weight = 2000;
-        } else {
-            static_assert(false, "Invalid type");
-        }
+        this->weight = TI::weight;
     }
     virtual MatchMode match(const std::string_view& segment) override {
         // Notes:
@@ -72,9 +69,9 @@ struct TemplateNode : public Node<Value> {
         //   handle while matching routes
         // - No major parsing should be done here; if complex parsing is required to determine if a segment matches, it
         //   probably isn't a placeholder we want to support
-        if constexpr (std::is_same_v<NodeType, std::string_view>) {
+        if constexpr (Type == "{string}") {
             return MatchMode::SingleSegment;
-        } else if constexpr (std::is_same_v<NodeType, int64_t>) {
+        } else if constexpr (Type == "{int}") {
             for (size_t i = 0; i < segment.size(); ++i) {
                 auto c = segment.at(i);
                 if ((c < '0' || c > '9') && c != '+' && c != '-') {
@@ -82,19 +79,15 @@ struct TemplateNode : public Node<Value> {
                 }
             }
             return MatchMode::SingleSegment;
+        } else if constexpr (Type == "{path}") {
+            return MatchMode::CatchAll;
         } else {
             static_assert(false, "Invalid type");
         }
     }
 
     constexpr virtual bool operator==(const std::string_view& pathSegment) override { 
-        if constexpr (std::is_same_v<NodeType, std::string_view>) {
-            return pathSegment.starts_with("{string}");
-        } else if constexpr (std::is_same_v<NodeType, int64_t>) {
-            return pathSegment.starts_with("{int}");
-        } else {
-            static_assert(false, "Invalid type");
-        }
+        return Type == pathSegment;
     }
 };
 
@@ -124,14 +117,21 @@ public:
 
     /**
      * Takes an input route and method and identifies the associated handler (the Value type). 
-     * 
+     *
+     * \param processedSegments[out]    How many segments in the route that actually were processed. Should only be used
+     *                                  to address CatchAll routes
      * \returns either a Value, meaning the underlying route type, or a FindError. See FindError for a description of
      *          its possible values.
      */
-    std::variant<FindError, Value> getRoute(const std::vector<std::string_view>& route, Method::HttpMethod method) const {
+    std::variant<FindError, Value> getRoute(
+        std::vector<std::string_view>& route,
+        Method::HttpMethod method,
+        size_t& processedSegments
+    ) const {
         std::shared_ptr<Node<Value>> node = root;
 
         for (auto& segment : route) {
+            ++processedSegments;
             bool hasMatch = false;
             for (auto& childNode : node->childNodes) {
                 auto matchType = childNode->match(segment);
@@ -140,7 +140,10 @@ public:
                     hasMatch = true;
                     break;
                 } else if (matchType == MatchMode::CatchAll) {
-                    throw std::runtime_error("Not implemented");
+                    node = childNode;
+                    hasMatch = true;
+
+                    goto endFor;
                 }
             }
 
@@ -148,12 +151,45 @@ public:
                 return FindError::NoMatch;
             }
         }
+    endFor:
         // Necessary to avoid incorrect IllegalMethod in sub-routes
         // Given a server with the route /some/path, / is technically also defined with `value.size() == 0`, as it isn't
         // a valid route.
         // This check correctly handles those cases.
         if (node->value.size() == 0) {
-            return FindError::NoMatch;
+            // This allows for more lenient route handling
+            // First, check if we need to match a / deeper. This allows `/subpath` to match `/subpath/`
+            if (route.back() != "/") {
+                for (auto& child : node->childNodes) {
+                    auto matchType = child->match("/");
+                    if (matchType == MatchMode::SingleSegment) {
+                        node = child;
+                        processedSegments = 0;
+                        route.push_back("/");
+                        // Recurse down to allow /subpath/ to exist standalone
+                        return getRoute(
+                            route,
+                            method,
+                            processedSegments
+                        );
+                    }
+                }
+            } else {
+                // next, check if there's a catchall, This allows /subpath/ to match /subpath/{path}
+                // For upgrades from /subpath, this happens on the next recursion
+                for (auto& child : node->childNodes) {
+                    auto matchType = child->match("index.html");
+                    if (matchType == MatchMode::CatchAll) {
+                        node = child;
+                        ++processedSegments;
+                        route.push_back("");
+                        break;
+                    }
+                }
+            }
+            if (node->value.size() == 0) {
+                return FindError::NoMatch;
+            }
         }
         auto it = node->value.find(method);
         if (it == node->value.end()) {
@@ -189,9 +225,11 @@ public:
 
                 // TODO: this could be constexpr, but that means adding a FixedString or ConstString split method too
                 if (segment.starts_with("{string}")) {
-                    newNode = std::make_shared<TemplateNode<Value, routing::TypeInfo<"{string}">::type>>(); 
+                    newNode = std::make_shared<TemplateNode<Value, "{string}">>();
                 } else if (segment.starts_with("{int}")) {
-                    newNode = std::make_shared<TemplateNode<Value, routing::TypeInfo<"{int}">::type>>(); 
+                    newNode = std::make_shared<TemplateNode<Value, "{int}">>();
+                } else if (segment.starts_with("{path}")) {
+                    newNode = std::make_shared<TemplateNode<Value, "{path}">>();
                 } else {
                     if (segment.find('{') != std::string_view::npos) {
                         [[unlikely]]
