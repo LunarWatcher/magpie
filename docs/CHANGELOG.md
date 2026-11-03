@@ -1,6 +1,6 @@
 # Changelog
 
-## [unreleased]
+## unreleased
 
 ## [v0.3.0] (2026-11-03)
 
@@ -22,7 +22,6 @@
 
 Initial versioned release
 
-[unreleased]: https://codeberg.org/LunarWatcher/magpie/compare/v0.4.0...master
 [v0.3.0]: https://codeberg.org/LunarWatcher/magpie/releases/tag/v0.3.0
 [v0.2.0]: https://codeberg.org/LunarWatcher/magpie/releases/tag/v0.2.0
 [v0.1.0]: https://codeberg.org/LunarWatcher/magpie/releases/tag/v0.1.0
