@@ -10,7 +10,7 @@ if (ENABLE_CONAN)
     set(CMAKE_PROJECT_TOP_LEVEL_INCLUDES ${conan_SOURCE_DIR}/conan_provider.cmake)
 endif()
 
-project(magpie)
+project(magpie LANGUAGES CXX)
 
 set (CMAKE_CXX_STANDARD 23)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 #include <unordered_map>
 
 namespace magpie::Method {
@@ -10,7 +11,7 @@ namespace magpie::Method {
  *
  * \see https://www.iana.org/assignments/http-methods/http-methods.xhtml
  */
-enum HttpMethod {
+enum HttpMethod : uint8_t {
     // Default HTTP {{{
     Connect,
     Delete,
