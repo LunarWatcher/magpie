@@ -13,7 +13,7 @@
     "scripts"
   ],
   "name": "Magpie - a webserver library",
-  "prefix": "",
+  "prefix": "/magpie",
   "theme": "_default",
   "timezone": "Europe/Oslo",
   "toc-start-level": 2
