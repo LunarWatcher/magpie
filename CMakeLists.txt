@@ -93,7 +93,7 @@ endif()
 include(FetchContent)
 FetchContent_Declare(stc
     GIT_REPOSITORY https://codeberg.org/LunarWatcher/stc
-    GIT_TAG v2026-11-02.1
+    GIT_TAG v2026-11-04
 )
 FetchContent_Declare(raven
     GIT_REPOSITORY https://codeberg.org/LunarWatcher/raven
