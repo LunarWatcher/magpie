@@ -1,6 +1,7 @@
 #include "magpie/application/formats/Cookie.hpp"
 #include "magpie/error/Result.hpp"
 #include "Request.hpp"
+#include <algorithm>
 #include <vector>
 #include <sstream>
 

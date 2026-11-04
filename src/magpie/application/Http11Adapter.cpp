@@ -3,6 +3,7 @@
 #include "magpie/App.hpp"
 #include "magpie/application/Common.hpp"
 #include "magpie/utility/ErrorHandler.hpp"
+#include <format>
 
 namespace magpie::application {
 Http11Adapter::Http11Adapter(

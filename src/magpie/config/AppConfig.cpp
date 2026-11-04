@@ -1,8 +1,10 @@
 #include "AppConfig.hpp"
 #include "magpie/application/Http11Adapter.hpp"
+#include <memory>
 #ifndef MAGPIE_DISABLE_HTTP2
 #include "magpie/application/Http2Adapter.hpp"
 #include "magpie/application/http2/Nghttp2Callbacks.hpp"
+#include <optional>
 #endif
 
 namespace magpie {
