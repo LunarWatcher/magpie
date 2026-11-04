@@ -3,8 +3,11 @@
 #include "magpie/application/Adapter.hpp"
 #include <openssl/core_dispatch.h>
 #include <raven/config/SSLConfig.hpp>
-#include <string>
+
 #include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
 #include <thread>
 
 namespace magpie {
