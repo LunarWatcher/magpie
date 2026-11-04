@@ -97,7 +97,7 @@ FetchContent_Declare(stc
 )
 FetchContent_Declare(raven
     GIT_REPOSITORY https://codeberg.org/LunarWatcher/raven
-    GIT_TAG v0.1.1
+    GIT_TAG v0.1.2
 )
 FetchContent_MakeAvailable(stc raven)
 
