@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <nghttp2/nghttp2.h>
 #include <stdexcept>
 #include <vector>
 #include <zlib.h>

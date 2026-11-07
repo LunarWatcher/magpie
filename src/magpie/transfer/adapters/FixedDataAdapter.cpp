@@ -1,6 +1,5 @@
 #include "FixedDataAdapter.hpp"
 #include "magpie/transfer/adapters/FlagCompat.hpp"
-#include <nghttp2/nghttp2.h>
 
 namespace magpie {
 
