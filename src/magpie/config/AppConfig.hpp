@@ -1,40 +1,36 @@
 #pragma once
 
-#include "magpie/application/Adapter.hpp"
+#include "AdapterFactory.hpp"
+// Not directly used, but included for backward compat
+#include <magpie/config/Http11AdapterFactory.hpp>
+#include <magpie/config/Http2AdapterFactory.hpp>
 #include <openssl/core_dispatch.h>
 #include <raven/config/SSLConfig.hpp>
 
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <string>
 #include <thread>
 
 namespace magpie {
 
-class BaseApp;
-
-struct AdapterFactoryStruct {
-    virtual ~AdapterFactoryStruct() = default;
-
-    virtual std::optional<raven::SSLConfig>&& withSslConfigExtras(std::optional<raven::SSLConfig>&& sslConfig) {
-        return std::move(sslConfig);
-    }
-    virtual std::shared_ptr<application::Adapter> get(raven::Connection* conn, BaseApp* app) = 0;
-};
-
-struct Http11AdapterFactory : public AdapterFactoryStruct {
-    virtual std::shared_ptr<application::Adapter> get(raven::Connection* conn, BaseApp* app) override;
-};
-
-#ifndef MAGPIE_DISABLE_HTTP2
-struct Http2AdapterFactory : public AdapterFactoryStruct {
-    virtual std::optional<raven::SSLConfig>&& withSslConfigExtras(std::optional<raven::SSLConfig>&& sslConfig) override;
-    virtual std::shared_ptr<application::Adapter> get(raven::Connection* conn, BaseApp* app) override;
-};
-#endif
-
 using AdapterFactory = std::shared_ptr<AdapterFactoryStruct>;
+
+/**
+ * Config with various HTTP limits. Currently only affects the HTTP/1.1 setup.
+ *
+ * Note that this setup will never be granular, and must represent the upper limit of what the application is expected
+ * to receive. If you need route-level granularity, use a reverse proxy.
+ */
+struct SecurityConfig {
+    uint16_t maxHeaders = 50;
+    uint32_t maxSingleHeaderBytes = 16384;
+
+    /**
+     * The max permitted length of the request body. Requests above this are rejected.
+     */
+    uint64_t maxBodyBytes = 16777216; // 16 MiB (I think; 2^24 bytes)
+};
 
 struct AppConfig {
     uint16_t port = 8080;
@@ -58,6 +54,13 @@ struct AppConfig {
         Http11AdapterFactory
 #endif
     >();
+
+    /**
+     * Sets abuse prevention limits for the chosen adapter.
+     *
+     * This is currently only respected by the HTTP/1.1 adapter.
+     */
+    SecurityConfig limits{};
 };
 
 

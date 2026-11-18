@@ -5,7 +5,8 @@
       "name": "LunarWatcher/magpie",
       "url": "https://codeberg.org/LunarWatcher/magpie",
       "license": "Magpie and its documentation is licensed under the MIT license. See <a href=\"https://codeberg.org/LunarWatcher/magpie/src/branch/master/LICENSE\">the LICENSE file</a>"
-    }
+    },
+    "release-url": "https://codeberg.org/LunarWatcher/magpie/releases/tag"
   },
   "description": "Magpie - a webserver library",
   "exclude": [

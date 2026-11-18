@@ -1,6 +1,7 @@
 #pragma once
 
 #include "magpie/config/AppConfig.hpp"
+#include "magpie/config/AdapterFactory.hpp"
 #include "magpie/handlers/StatusHandlers.hpp"
 #include "magpie/middlewares/Middleware.hpp"
 #include "magpie/routing/BaseRouter.hpp"

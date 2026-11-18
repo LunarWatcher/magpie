@@ -1,17 +1,14 @@
 #include "Http11Adapter.hpp"
 
-#include "magpie/App.hpp"
+#include <magpie/App.hpp>
 #include "magpie/application/Common.hpp"
 #include "magpie/utility/ErrorHandler.hpp"
-#include <format>
 
 namespace magpie::application {
-Http11Adapter::Http11Adapter(
-    raven::Connection* conn,
-    BaseApp* app
-) : app(app), conn(conn) {
-    
-}
+
+Http11Adapter::Http11Adapter(raven::Connection* conn, BaseApp* app)
+    : state(app->getConfig().limits, conn->getIP()), app(app), conn(conn)
+{}
 
 bool Http11Adapter::parse(
     const raven::Buffer& buff,
@@ -42,9 +39,11 @@ bool Http11Adapter::parse(
                     *res
                 );
             }, res.get());
-            // TODO: don't override content-type set manually
-            // TODO: standardise (this part in particular is duplicated in the HTTP/2 adapter)
-            res->headers["content-type"] = res->contentType;
+            if (res->body) {
+                // TODO: don't override content-type set manually
+                // TODO: standardise (this part in particular is duplicated in the HTTP/2 adapter)
+                res->headers["content-type"] = res->contentType;
+            }
 
             state.setResponse(res);
         } break;

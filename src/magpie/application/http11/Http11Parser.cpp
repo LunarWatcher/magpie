@@ -1,5 +1,6 @@
 #include "Http11Parser.hpp"
 #include "magpie/application/Methods.hpp"
+#include "magpie/logger/Logger.hpp"
 #include "magpie/transfer/adapters/FlagCompat.hpp"
 
 #include <cassert>
@@ -27,6 +28,7 @@ ServerAction Http11State::read(
     std::size_t readBytes
 ) {
     std::string_view v{buff.data(), readBytes};
+    // TODO: technically, a \r\n can align with a chunk such that it is the first byte
     if (v.at(0) == '\r') {
         return ServerAction::KillRequest;
     }
@@ -34,8 +36,16 @@ ServerAction Http11State::read(
     if (state != Http11ParserState::ReadBody) {
         size_t headerEnd = v.find("\r\n\r\n");
         if (headerEnd == std::string_view::npos) {
+            if ((size_t) headerBuffer.tellg() + headerEnd + 2 > uint64_t(conf.maxSingleHeaderBytes) * conf.maxHeaders) {
+                logger::warn("suspicious: received header block from {} that exceeded max length", connIpAddr);
+                return kindlyKillRequest();
+            }
             headerBuffer << v;
         } else {
+            if ((size_t) headerBuffer.tellg() + headerEnd + 2 > uint64_t(conf.maxSingleHeaderBytes) * conf.maxHeaders) {
+                logger::warn("suspicious: received header block from {} that exceeded max length", connIpAddr);
+                return kindlyKillRequest();
+            }
             std::string_view headerPart = v.substr(0, headerEnd + 2); // Normalize so every line has a CRLF
             // We validate the contentPart after the fact
             std::string_view contentPart = v.substr(headerEnd + 4);
@@ -77,6 +87,9 @@ ServerAction Http11State::read(
 
             for (size_t i = 1; i < lines.size(); ++i) {
                 auto& line = lines.at(i);
+                if (line.length() > conf.maxSingleHeaderBytes) {
+                    return kindlyKillRequest();
+                }
                 auto colon = line.find(':');
 
                 if (line.empty()) {
@@ -88,16 +101,16 @@ ServerAction Http11State::read(
                     || colon + 2 >= line.size()
                     || line.at(colon + 1) != ' '
                 ) {
-                    setResponse(
-                        std::make_shared<Response>(
-                            Status::BadRequest,
-                            "Illegal header",
-                            "text/plain"
-                        )
+                    logger::error(
+                        "suspicious: received illegal header from {}",
+                        connIpAddr
                     );
-                    return ServerAction::WriteResponse;
+                    return kindlyKillRequest();
                 }
 
+                if (req->headers.size() > conf.maxHeaders) {
+                    return kindlyKillRequest();
+                }
 
                 auto key = line.substr(0, colon);
                 auto value = line.substr(colon + 2);
@@ -111,14 +124,21 @@ ServerAction Http11State::read(
                     }
                 );
                 if (key == "transfer-encoding") {
-                    return ServerAction::KillRequest;
+                    return kindlyKillRequest();
                 } else if (key == "content-length") {
                     try {
                         // TODO: use the currently nullptr idx arg to make sure the entire message is consumed
                         this->contentLength = std::stoull(value, nullptr, 10);
+
+                        if (this->contentLength > this->conf.maxBodyBytes) {
+                            logger::warn(
+                                "suspicious: received Content-Length from {} that exceeds limits from",
+                                connIpAddr
+                            );
+                            return kindlyKillRequest();
+                        }
                     } catch (...) {
-                        // Malformed content-length = kill the request
-                        return ServerAction::KillRequest;
+                        return kindlyKillRequest();
                     }
                     req->setHeader(key, std::to_string(*contentLength));
                 } else {
@@ -136,6 +156,9 @@ ServerAction Http11State::read(
             }
         }
     } else if (state == Http11ParserState::ReadBody) {
+        if ((size_t) bodyBuffer.tellg() + v.size() > conf.maxBodyBytes) {
+            return ServerAction::KillRequest;
+        }
         bodyBuffer << v;
     }
 
@@ -171,6 +194,15 @@ void Http11State::writeChunk(
         writeFlags
     );
     writeBuffer.written += written;
+}
+
+ServerAction Http11State::kindlyKillRequest()
+{
+    setResponse(
+        std::make_shared<Response>(Status::BadRequest)
+    );
+    advance(Http11ParserState::WriteHeaders);
+    return ServerAction::WriteResponse;
 }
 
 void Http11State::populateWriteBuffer() {

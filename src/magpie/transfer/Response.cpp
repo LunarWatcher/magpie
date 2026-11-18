@@ -6,15 +6,21 @@
 namespace magpie {
 
 Response::Response() : code(&Status::OK), body(nullptr) {}
+
+Response::Response(
+    const StatusCode& code
+) : code(&code), body(nullptr) {}
+
 Response::Response(
     const StatusCode& code,
     std::string&& body,
     std::string&& contentType
-) : 
+) :
     code(&code),
     body(std::make_shared<FixedDataAdapter>(std::move(body))),
-    contentType(std::move(contentType)) 
+    contentType(std::move(contentType))
 {}
+
 Response::Response(
     const StatusCode& code,
     std::shared_ptr<DataAdapter>&& bodyAdapter,
@@ -23,7 +29,6 @@ Response::Response(
     code(&code),
     body(std::move(bodyAdapter)),
     contentType(std::move(contentType))
-
 {}
 
 void Response::setBody(std::string&& body) {

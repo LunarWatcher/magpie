@@ -1,3 +1,4 @@
+#include "magpie/config/AppConfig.hpp"
 #include "raven/conn/CommonDefs.hpp"
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
@@ -20,8 +21,12 @@ Data initBuffer(const std::string& msg) {
     };
 }
 
-TEST_CASE("Verify HTTP/1.1 parser state transitions", "[http11]") {
-    magpie::http11::Http11State parser;
+struct Http11ParserFixture {
+    magpie::SecurityConfig limits;
+    magpie::http11::Http11State parser { limits, "192.168.0.69" };
+};
+
+TEST_CASE_METHOD(Http11ParserFixture, "Verify HTTP/1.1 parser state transitions", "[http11]") {
     SECTION("Valid init line should be handled") {
         auto [buff, msgLen] = initBuffer("GET / HTTP/1.1\r\n");
         REQUIRE(
@@ -72,8 +77,7 @@ TEST_CASE("Verify HTTP/1.1 parser state transitions", "[http11]") {
     }
 }
 
-TEST_CASE("The HTTP/1.1 parser needs to support arbitrary splits from read()", "[http11]") {
-    magpie::http11::Http11State parser;
+TEST_CASE_METHOD(Http11ParserFixture, "The HTTP/1.1 parser needs to support arbitrary splits from read()", "[http11]") {
 
     SECTION("Sectioned by type") {
         {

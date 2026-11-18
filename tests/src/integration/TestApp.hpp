@@ -2,6 +2,7 @@
 
 #include "magpie/App.hpp"
 #include "magpie/config/AppConfig.hpp"
+#include "magpie/transfer/Response.hpp"
 #include "raven/config/SSLConfig.hpp"
 #include "magpie/data/CommonData.hpp"
 #include "util/TestCaseGenerator.hpp"
@@ -149,5 +150,20 @@ struct TestApp {
         injectDefault(session);
         cpr::priv::set_option(session, std::forward<Ts>(ts)...);
         return session.Post();
+    }
+
+    void defaultRoutes() {
+        app->template route<"/", magpie::Method::Get>([](const auto, const auto&, auto& res) {
+            res = magpie::Response(
+                magpie::Status::OK,
+                "Good girl"
+            );
+        });
+        app->template route<"/", magpie::Method::Post>([](const auto, const magpie::Request& req, magpie::Response& res) {
+            res = magpie::Response(
+                magpie::Status::OK,
+                std::string(req.body)
+            );
+        });
     }
 };

@@ -26,6 +26,9 @@ struct Response {
 
     Response();
     Response(
+        const StatusCode& code
+    );
+    Response(
         const StatusCode& code,
         std::string&& body,
         std::string&& contentType = "text/plain"
@@ -53,12 +56,12 @@ struct Response {
      *          the URIs is a future feature.
      *
      * \param out[out]      The request object to modify
-     * \param dest          The destination to redirect to. 
+     * \param dest          The destination to redirect to.
      * \param permanent     Whether or not the redirect is permanent
      */
     static void redirect(
         Response& out,
-        // TODO: I wonder if it makes sense to introduce a URI object to feal with absolute redirects in the future
+        // TODO: I wonder if it makes sense to introduce a URI object to deal with absolute redirects in the future
         std::string&& dest,
         bool permanent = false
     );
@@ -71,7 +74,7 @@ struct Response {
      *          the URIs is a future feature.
      *
      * \param out[out]      The request object to modify
-     * \param dest          The destination to redirect to. 
+     * \param dest          The destination to redirect to.
      */
     static void moved(
         Response& out,

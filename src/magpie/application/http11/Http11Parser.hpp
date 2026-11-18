@@ -1,7 +1,9 @@
 #pragma once
 
+#include "magpie/config/AppConfig.hpp"
 #include "magpie/transfer/Request.hpp"
 #include "magpie/transfer/Response.hpp"
+#include "magpie/transfer/StatusCode.hpp"
 #include "magpie/transfer/adapters/FixedDataAdapter.hpp"
 #include "raven/conn/CommonDefs.hpp"
 #include "raven/conn/Connection.hpp"
@@ -38,7 +40,7 @@ enum class ServerAction {
      *
      * This MUST result in the termination of the connection.
      */
-    KillRequest
+    KillRequest,
 };
 
 struct WriteBuffer {
@@ -87,6 +89,8 @@ private:
     static inline thread_local std::array<char, contentBuffSize> contentBuff;
 
     WriteBuffer writeBuffer;
+    const SecurityConfig& conf;
+    std::string connIpAddr; // Used for logging
 
     void advance(Http11ParserState nextState);
     void populateWriteBuffer();
@@ -94,7 +98,14 @@ private:
         raven::Connection* conn,
         int& writeFlags
     );
+
+    ServerAction kindlyKillRequest();
+
 public:
+    Http11State(
+        const SecurityConfig& conf,
+        const std::string& connIpAddr
+    ) : conf(conf), connIpAddr(connIpAddr) {}
     std::shared_ptr<Request> req;
     std::shared_ptr<Response> res;
 

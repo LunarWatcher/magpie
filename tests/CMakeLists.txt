@@ -18,6 +18,8 @@ add_executable(tests
 
     src/integration/regression/StatusCodeOnSubtreeTests.cpp
 
+    src/integration/security/LimitTests.cpp
+
     src/routing/RouteCompilationTests.cpp
     src/routing/RouterTests.cpp
 

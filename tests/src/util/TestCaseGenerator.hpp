@@ -21,6 +21,8 @@ struct EngineTestContext {
 
     EngineTestContext(const magpie::AdapterFactory& adapterFactory) : adapterFactory(adapterFactory) {}
     virtual ~EngineTestContext() = default;
+
+    virtual bool isHttp2() { return false; }
 };
 
 struct HttpEngineTestContext : public EngineTestContext {
@@ -30,6 +32,8 @@ struct HttpEngineTestContext : public EngineTestContext {
         HttpVersion version,
         const magpie::AdapterFactory& adapterFactory
     ) : EngineTestContext(adapterFactory), version(version) {}
+
+    bool isHttp2() override { return version == HttpVersion::Http2; }
 };
 
 struct EngineTestFixture {
