@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "integration/TestApp.hpp"
 #include "util/TestCaseGenerator.hpp"
+#include <stc/Random.hpp>
 
 namespace {
 
@@ -126,6 +127,32 @@ HTTP_ENGINE_TEST_CASE("Body length limits should be respected", "[limits][securi
     );
     REQUIRE(
         res.header["content-length"] == "0"
+    );
+}
+
+HTTP_ENGINE_TEST_CASE("Long headers within limits should not be rejected", "[limits][security]") {
+    if (context->isHttp2()) {
+        SKIP("HTTP/2 does not implement limits");
+    }
+    TestApp<> app(context);
+    app.defaultRoutes();
+    app.start();
+
+    auto res = app.Get(
+        app.url("/"),
+        cpr::Header {
+            {"Key", stc::random::getRandomChars(16300)},
+            {"Key2", stc::random::getRandomChars(16300)},
+            {"Key3", stc::random::getRandomChars(16300)},
+            {"Key4", stc::random::getRandomChars(16300)},
+            {"Key5", stc::random::getRandomChars(16300)},
+        }
+    );
+    REQUIRE(
+        res.status_code == 200
+    );
+    REQUIRE(
+        res.text == "Good girl"
     );
 }
 

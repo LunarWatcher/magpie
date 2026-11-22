@@ -19,6 +19,7 @@ add_executable(tests
     src/integration/regression/StatusCodeOnSubtreeTests.cpp
 
     src/integration/security/LimitTests.cpp
+    src/integration/security/RandomPayloadTests.cpp
 
     src/routing/RouteCompilationTests.cpp
     src/routing/RouterTests.cpp
@@ -32,7 +33,7 @@ set(CATCH_CONFIG_DEFAULT_REPORTER "explicit" CACHE STRING "" FORCE)
 FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG v3.15.3
+  GIT_TAG v3.16.1
 )
 
 FetchContent_MakeAvailable(Catch2)

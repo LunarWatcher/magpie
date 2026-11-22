@@ -36,7 +36,7 @@ ServerAction Http11State::read(
     if (state != Http11ParserState::ReadBody) {
         size_t headerEnd = v.find("\r\n\r\n");
         if (headerEnd == std::string_view::npos) {
-            if ((size_t) headerBuffer.tellg() + headerEnd + 2 > uint64_t(conf.maxSingleHeaderBytes) * conf.maxHeaders) {
+            if ((size_t) headerBuffer.tellg() + v.size() + 2 > uint64_t(conf.maxSingleHeaderBytes) * conf.maxHeaders) {
                 logger::warn("suspicious: received header block from {} that exceeded max length", connIpAddr);
                 return kindlyKillRequest();
             }
