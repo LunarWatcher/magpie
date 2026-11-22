@@ -95,6 +95,10 @@ public:
         return this->serv.getPort();
     }
 
+    std::string getConnectionString() {
+        return this->serv.getConnectionString();
+    }
+
     void sync() {
         this->serv.sync();
     }
@@ -117,6 +121,13 @@ public:
         return this->middlewares.get();
     }
 
+    std::string getAddr() {
+        return serv.getAddr();
+    }
+
+    bool hasSSLEnabled() {
+        return serv.hasSSLEnabled();
+    }
 };
 
 }

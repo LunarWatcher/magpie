@@ -54,6 +54,7 @@ TCPServer::TCPServer(
     )
 {
     if (concurrency < 1) {
+        [[unlikely]]
         throw std::runtime_error("You're trying to run nothing");
     }
 }
@@ -65,10 +66,8 @@ TCPServer::~TCPServer() {
 void TCPServer::start() {
 
     logger::info(
-        "TCPServer listening on {}://{}:{}",
-        this->hasSSL ? "https" : "http",
-        this->serv.getAssignedAddr(),
-        this->serv.getPort()
+        "TCPServer listening on {}",
+        getConnectionString()
     );
     this->serv.start();
 
@@ -83,6 +82,19 @@ void TCPServer::stop() {
 
 uint16_t TCPServer::getPort() {
     return this->serv.getPort();
+}
+
+std::string TCPServer::getAddr() {
+    return this->serv.getAssignedAddr();
+}
+
+std::string TCPServer::getConnectionString() {
+    return std::format(
+        "{}://{}:{}",
+        this->app->getConfig().adapterFactory->getProto(hasSSL),
+        getAddr(),
+        getPort()
+    );
 }
 
 }

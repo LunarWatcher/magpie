@@ -32,9 +32,15 @@ public:
     void stop();
 
     uint16_t getPort();
+    std::string getAddr();
 
     void sync() {
         this->serv.waitForStarted();
+    }
+
+    std::string getConnectionString();
+    bool hasSSLEnabled() {
+        return hasSSL;
     }
 };
 

@@ -23,6 +23,19 @@ HTTP_ENGINE_TEST_CASE("Test plain routing", "[integration]") {
     });
 
     app.start();
+
+    REQUIRE(
+        app->getConnectionString()
+        ==
+        std::format(
+            "{}://{}:{}",
+            app->hasSSLEnabled() ? "https" : "http",
+            app->getAddr(),
+            app->getPort()
+        )
+    );
+    REQUIRE(app->getAddr().starts_with("127."));
+    
     using namespace std::literals;
 
     SECTION("Can access route as intended") {

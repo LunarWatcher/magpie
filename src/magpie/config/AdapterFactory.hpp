@@ -17,6 +17,8 @@ struct AdapterFactoryStruct {
         return std::move(sslConfig);
     }
     virtual std::shared_ptr<application::Adapter> get(raven::Connection* conn, BaseApp* app) = 0;
+
+    virtual std::string getProto(bool hasSsl) = 0;
 };
 
 }
